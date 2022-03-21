@@ -10,6 +10,8 @@ import pandas
 import os
 import sys
 import argparse
+import numpy as np
+import tensorflow as tf
 
 # categories: set of string with no duplicates and cardinality >= 2
 # Returns a numerical encoding of the categories; specifically,
@@ -51,7 +53,7 @@ def categories_to_encoding(category_encoding, data):
 # data filename : data category
 def get_golds(gold_file_name):
     golds = pandas.read_csv(gold_file_name)
-    return {row['FileID']:row['Category'] for row in golds.iterrows()}
+    return {row[1]['FileID']:row[1]['Category'] for row in golds.iterrows()}
 
 
 
@@ -90,21 +92,44 @@ def get_sample_data(args):
     #sample_gold_batches = sample_gold_batches[:, :, 0] Donahue's code does this; not sure why, it may be an earlier version thing
 
     #Separate the audio data from the filenames
-    #batch_filenames = sample_gold_batches.map(lambda batch: id_loader.separate_in_batch(0,batch))
     batch_filenames = sample_gold_batches.map(lambda fn, audio: fn)
-    batch_filenames = batch_filenames.map(lambda fn: os.path.basename(fn.numpy().decode('ascii')))
-    #batch_audio_vectors = sample_gold_batches.map(lambda batch: id_loader.separate_in_batch(1,batch))
+    batch_filenames = batch_filenames.map(tensor_basename)
     batch_audio_vectors = sample_gold_batches.map(lambda fn, audio: audio)
 
     #Change the filenames to string categories
-    #TODO: reach into batches - actually maybe not; The docs don't explain this that I can find, but it seems Dataset mapping functions let you ignore the batch level
     file_category_maps = get_golds("sample_file_info.csv")
-    batch_categories = batch_filenames.map(lambda file: file_category_maps[file.numpy().decode('ascii')])
+    batch_categories = batch_filenames.map(lambda name: tensor_categories(name, file_category_maps))
     category_encodings = category_encoder(list(set(file_category_maps.values())))
-    batch_category_encodings = batch_filenames.map(lambda category: category_encodings[batch_categories])
+    batch_encoded_categories = batch_categories.map(lambda category: tensor_encodings(category, category_encodings))
 
 
-    return sample_gold_batches
+    return batch_audio_vectors, batch_filenames, batch_encoded_categories, category_encodings
+
+#Tensorflow strings can't be used like normal Python strings; if you want to call a string function on them,
+# you have to wrap operations in a
+#function that takes a Numpy array and then apply it using numpy_func
+def helper_basename(numpy_strings):
+    return np.apply_along_axis(lambda fn: os.path.basename(fn), 0, numpy_strings)
+
+#Note: these two can be combined into one function because they do the same thing
+def helper_categories(numpy_strings, file_category_maps):
+    return np.apply_along_axis(lambda file: file_category_maps[file], 0, numpy_strings)
+def helper_encodings(numpy_strings, category_encodings):
+    return np.apply_along_axis(lambda file: category_encodings[file], 0, numpy_strings)
+
+def tensor_basename(tensor):
+    return tf.numpy_function(helper_basename, [tensor], tf.string)
+
+#Note: these two can be combined into one function because they do the same thing
+def tensor_categories(tensor, file_category_maps):
+    return tf.numpy_function(lambda string: helper_categories(string, file_category_maps),
+                             [tensor], tf.string)
+def tensor_encodings(tensor, category_encodings):
+    return tf.numpy_function(lambda string: helper_categories(string, category_encodings),
+                             [tensor], tf.string)
+
+
+
 
 #Returns an argument parser with the arguments from Donahue's WaveGan
 def arguments():

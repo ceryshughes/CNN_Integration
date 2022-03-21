@@ -144,7 +144,6 @@ def id_decode_extract_and_batch(
         [fp],
         tf.float32,
         stateful=False)
-    #audio.set_shape([None, 1, decode_num_channels]) #I might change this so the shapes would be compatible for batching
     audio.set_shape([None,1, decode_num_channels])
     return audio
 
@@ -251,11 +250,13 @@ def id_decode_extract_and_batch(
   #return next(iterator) #Cerys: isn't this throwing away a bunch of batches?
   return dataset
 
+
+#No longer necessary- batched Datasets let you ignore the batch level
 # Cerys: A helper function to pass into Dataset.map to extract either the filenames or the audio from the batched dataset, maintaining
 # order
 # index: 0 to return the batch with only the first element of each tuple, i.e., just the filenames
 #        1 to return the batch with only the second element of each tuple, i.e., just the audio vectors
-def separate_in_batch(index, batch):
-  return [element[index] for element in batch]
+# def separate_in_batch(index, batch):
+#   return [element[index] for element in batch]
 
 
