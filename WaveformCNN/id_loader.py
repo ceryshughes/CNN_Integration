@@ -71,17 +71,18 @@ def decode_audio(fp, fs=None, num_channels=1, normalize=False, fast_wav=False):
 def id_decode_extract_and_batch(
     fps,
     batch_size,
-    #slice_len, - not needed since I'm not slicing up the wav files; one wav file = one training datum
     decode_fs,
     decode_num_channels,
+    slice_len = 65536,#- maybe not needed since I'm not slicing up the wav files; one wav file = one training datum. I will set it to be as long as a synthesized VCV will likely to be
     decode_normalize=True,
     decode_fast_wav=False,
     decode_parallel_calls=1,
-    #slice_randomize_offset=False, - not needed since I'm not slicing up the wav files or discriminating real vs fake and shuffling phase;
+    slice_randomize_offset=False, #- not needed since I'm not slicing up the wav files or discriminating real vs fake and shuffling phase;
         # one wav file = one training datum
-    #slice_first_only=False, - not needed since I'm not slicing up the wav files; one wav file = one training datum
-    #slice_overlap_ratio=0, - not needed since I'm not slicing up the wav files; one wav file = one training datum
-    #slice_pad_end=False, - not needed since I'm not slicing up the wav files; one wav file = one training datum
+    slice_first_only=False, #- not needed since I'm not slicing up the wav files; one wav file = one training datum
+    slice_overlap_ratio=0, # - not needed since I'm not slicing up the wav files; one wav file = one training datum
+    slice_pad_end=True, #- needed to make slices same length to be compatible for batching; Donahue has this optional,
+        # but I may remove it and just automatically pad
     repeat=False,
     shuffle=False,
     shuffle_buffer_size=None,
@@ -142,71 +143,95 @@ def id_decode_extract_and_batch(
         [fp],
         tf.float32,
         stateful=False)
-    audio.set_shape([None, 1, decode_num_channels])
-
+    #audio.set_shape([None, 1, decode_num_channels]) #I might change this so the shapes would be compatible for batching
+    audio.set_shape([None,1, decode_num_channels])
     return audio
 
+
+
+  # Cerys: I think this function is used to slice up longer audio to make more, smaller training examples.
+  # I don't want to do that; I want to train on whole VCV sequences, so I tried skipping applying this function.
+  #However, that resulted in a lack of padding, which allowed the audio vectors different lengths; they need to
+  #all be the same length so they fit into the network properly and can be batched (for some reason Tensorflow
+  #Dataset won't batch things of different lengths - tensorflow.python.framework.errors_impl.InvalidArgumentError: Cannot
+  # batch tensors with different shapes in component 1". So, I'm going to try and just keep the padding part without
+  # the slicing-up part.
+  #Parallel
+  def _slice(audio):
+    # Calculate hop size
+    if slice_overlap_ratio < 0:
+      raise ValueError('Overlap ratio must be greater than 0')
+    slice_hop = int(round(slice_len * (1. - slice_overlap_ratio)) + 1e-4)
+    if slice_hop < 1:
+      raise ValueError('Overlap ratio too high')
+
+    # Randomize starting phase:  -Cerys: not necessary for me, this is just to handle generator phase artefact
+    # if slice_randomize_offset:
+    #   start = tf.random_uniform([], maxval=slice_len, dtype=tf.int32)
+    #   audio = audio[start:]
+
+    # Extract sliceuences
+    audio_slices = tf.signal.frame(
+        audio,
+        slice_len,
+        slice_hop,
+        pad_end=slice_pad_end,
+        pad_value=0,
+        axis=0)
+
+    # Donahue: Only use first slice if requested
+    # Me: definitely only use first slice because I only want one audio per VCV sequence,
+    # and the VCVs are short so they will fit in the first slice
+    audio_slices = audio_slices[:1]
+
+    return audio_slices
+
+  def _slice_dataset_wrapper(audio):
+    audio_slices = _slice(audio)
+    return tf.data.Dataset.from_tensor_slices(audio_slices)
+
+
+
+  # Extract parallel sliceuences from both audio and features
   # Decode audio
-  #Cerys: the original line below throws away the file names and replaces them with the audio in those files
-  #Dataset elements can be tuples, so instead of throwing out the file names, I make them the first members of the tuple,
-  #where the second element is the content audio vector
+  # Cerys: the original line below throws away the file names and replaces them with the audio in those files
+  # Dataset elements can be tuples, so instead of throwing out the file names, I make them the first members of the tuple,
+  # where the second element is the content audio vector
   # dataset = dataset.map(
   #     _decode_audio_shaped,
   #     num_parallel_calls=decode_parallel_calls)
   fp_dataset = dataset
   dataset = dataset.map(
-       _decode_audio_shaped,
-       num_parallel_calls=decode_parallel_calls)
+    _decode_audio_shaped,
+    num_parallel_calls=decode_parallel_calls)
+  dataset = dataset.flat_map(_slice_dataset_wrapper)
+  dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,)))
   dataset = tf.data.Dataset.zip((fp_dataset, dataset))
   for element in dataset:
     print(element)
 
-  # Cerys: I think this function is used to slice up longer audio to make more, smaller training examples.
-  # I don't want to do that; I want to train on whole VCV sequences, so I skip applying this function.
-  # Parallel
-  # def _slice(audio):
-  #   # Calculate hop size
-  #   if slice_overlap_ratio < 0:
-  #     raise ValueError('Overlap ratio must be greater than 0')
-  #   slice_hop = int(round(slice_len * (1. - slice_overlap_ratio)) + 1e-4)
-  #   if slice_hop < 1:
-  #     raise ValueError('Overlap ratio too high')
-  #
-  #   # Randomize starting phase:
-  #   if slice_randomize_offset:
-  #     start = tf.random_uniform([], maxval=slice_len, dtype=tf.int32)
-  #     audio = audio[start:]
-  #
-  #   # Extract sliceuences
-  #   audio_slices = tf.contrib.signal.frame(
-  #       audio,
-  #       slice_len,
-  #       slice_hop,
-  #       pad_end=slice_pad_end,
-  #       pad_value=0,
-  #       axis=0)
-  #
-  #   # Only use first slice if requested
-  #   if slice_first_only:
-  #     audio_slices = audio_slices[:1]
-  #
-  #   return audio_slices
-  #
-  # def _slice_dataset_wrapper(audio):
-  #   audio_slices = _slice(audio)
-  # #   return tf.data.Dataset.from_tensor_slices(audio_slices)
-  #
-  # # Extract parallel sliceuences from both audio and features
-  # dataset = dataset.flat_map(_slice_dataset_wrapper)
 
 
+  length = 0
+  for element in dataset:
+    print(element)
+    length += 1
+  print("LENGTH", length)
 
   # Shuffle examples
   if shuffle:
     dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
 
+
+
+
   # Make batches
   dataset = dataset.batch(batch_size, drop_remainder=True)
+  length = 0
+  for element in dataset:
+    print(element)
+    length += 1
+  print("LENGTH", length)
 
   # Prefetch a number of batches
   if prefetch_size is not None:
@@ -216,10 +241,11 @@ def id_decode_extract_and_batch(
           tf.data.experimental.prefetch_to_device(
             '/device:GPU:{}'.format(prefetch_gpu_num)))
 
-  # Get tensors
+
+  # Get tensors - why is this part necessary? Oh, because of prefetching
   #Cerys: updated iterator code to Tensorflow v2
   iterator = iter(dataset)
-  
+
   return next(iterator) #Cerys: isn't this throwing away a bunch of batches?
 
 

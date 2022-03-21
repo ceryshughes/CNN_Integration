@@ -79,11 +79,13 @@ def get_sample_data(args):
         #slice_first_only=args.data_first_slice,
         #slice_overlap_ratio=0. if args.data_first_slice else args.data_overlap_ratio,
         #slice_pad_end=True if args.data_first_slice else args.data_pad_end,
-        repeat=True,
+        repeat=False, #Originally true in Donahue; I set it to False because repeat means create a structure where you "repeat the data indefinitely"
         shuffle=False, #Todo: switch to True
         shuffle_buffer_size=4096,
         prefetch_size=args.train_batch_size * 4,
         prefetch_gpu_num=args.data_prefetch_gpu_num)
+
+    print(sample_gold_batches)
     sample_gold_batches = sample_gold_batches[:, :, 0]
 
     #Separate the audio data from the filenames
