@@ -254,6 +254,8 @@ if __name__ == "__main__":
     audio, filenames, gold_labels, category_encodings = get_sample_data(args)
     #print(audio)
     print("Gold labels")
+    for element in audio:
+        print(element)
     for element in gold_labels:
         print(element)
     print("Category encodings")
