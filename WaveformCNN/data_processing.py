@@ -56,37 +56,34 @@ def get_golds(gold_file_name):
 
 
 
-# Reads dummy wav files from sample_wavs directory just as a sanity check and as a skeleton/example to hook
-# everything up
-# args: file reading args
-# Returns: - a batched dataset of audio vectors
-#          - a corresponding batched dataset of the vectors' file IDs
-#          - a corresponding list of the vectors' categories in either binary or one-hot representation
-#          - a dictionary of possible categories and their mappings to 0 or 1 if binary or one-hot lists if multiclass
-def get_sample_data(args):
+
+def get_data(wav_file_dir, info_csv):
+    """ Generates objects from data files
+    Args:
+        -wav_file_dir: string name of directory where the wav files are stored(must contain only .wav files)
+        -info_csv: a csv file with two columns, FileID and Category, that lists the category label for each file in wav_file_dir
+    Returns: - a batched dataset of audio vectors (Tensorflow Dataset of int.32 vector with 65536 samples)
+             - a corresponding batched dataset of the vectors' file IDs (Tensorflow Dataset of string vectors)
+             - a corresponding list of the vectors' categories in either binary or one-hot representation (Tensorflow Dataset of either int.32 or vector of int.32)
+          - a dictionary of possible categories and their mappings to 0 or 1 if binary or one-hot lists if multiclass
+    """
+
     #Cerys: this is ok as long as there are no directories in sample_wavs
-    all_sample_filenames = ["sample_wavs/"+fn for fn in os.listdir("sample_wavs")]
+    all_sample_filenames = [wav_file_dir+fn for fn in os.listdir(wav_file_dir)]
 
     #This returns a batched Tensorflow Dataset?
     sample_gold_batches = id_loader.id_decode_extract_and_batch(all_sample_filenames,
         batch_size=args.train_batch_size,
-        #slice_len=args.data_slice_len,
         decode_fs=args.data_sample_rate,
-        decode_num_channels=args.data_num_channels,
+        decode_num_channels=1,
         decode_fast_wav=args.data_fast_wav,
         decode_parallel_calls=4,
-        #slice_randomize_offset=False if args.data_first_slice else True,
-        #slice_first_only=args.data_first_slice,
-        #slice_overlap_ratio=0. if args.data_first_slice else args.data_overlap_ratio,
-        #slice_pad_end=True if args.data_first_slice else args.data_pad_end,
         repeat=False, #Originally true in Donahue; I set it to False because repeat means create a structure where you "repeat the data indefinitely"
-        shuffle=False, #Todo: switch to True
+        shuffle=False if debug else True, #Todo: switch to True
         shuffle_buffer_size=4096,
         prefetch_size=args.train_batch_size * 4,
         prefetch_gpu_num=args.data_prefetch_gpu_num)
 
-    #print(sample_gold_batches)
-    #sample_gold_batches = sample_gold_batches[:, :, 0] Donahue's code does this; not sure why, it may be an earlier version thing
 
     #Separate the audio data from the filenames
     batch_filenames = sample_gold_batches.map(lambda fn, audio: fn)
@@ -94,7 +91,7 @@ def get_sample_data(args):
     batch_audio_vectors = sample_gold_batches.map(lambda fn, audio: audio)
 
     #Change the filenames to string categories
-    file_category_maps = get_golds("sample_file_info.csv")
+    file_category_maps = get_golds(info_csv)
     batch_categories = batch_filenames.map(lambda name: tensor_categories(name, file_category_maps))
     category_to_encoding, encoding_to_category = category_encoder(list(set(file_category_maps.values())))
     batch_encoded_categories = batch_categories.map(lambda category: tensor_encodings(category, category_to_encoding))
@@ -241,15 +238,12 @@ def arguments():
         incept_k=10)
     return parser
 
-def train_cnn(wav_data, gold_data):
-    model = cnn.create_model()
-    model.fit(wav_data, gold_data)
-    return model
+
 
 
 if __name__ == "__main__":
     args = arguments().parse_args()
-    audio, filenames, gold_labels, category_encodings = get_sample_data(args)
+    audio, filenames, gold_labels, category_encodings = get_data("sample_wavs", "sample_file_info.csv")
     #print(audio)
     print("Gold labels")
     for element in audio:
@@ -258,4 +252,3 @@ if __name__ == "__main__":
         print(element)
     print("Category encodings")
     print(category_encodings)
-    model = train_cnn(audio, gold_labels)
