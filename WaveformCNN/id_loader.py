@@ -7,7 +7,7 @@ import tensorflow as tf
 
 import sys
 
-debug = True
+debug = False
 
 def decode_audio(fp, fs=None, num_channels=1, normalize=False, fast_wav=False):
   """Decodes audio file paths into 32-bit floating point vectors.
@@ -207,16 +207,18 @@ def id_decode_extract_and_batch(
   dataset = dataset.flat_map(_slice_dataset_wrapper)
   dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,)))
   dataset = tf.data.Dataset.zip((fp_dataset, dataset))
-  for element in dataset:
-    print(element)
+
+  if debug:
+    for element in dataset:
+      print(element)
 
 
-
-  length = 0
-  for element in dataset:
-    print(element)
-    length += 1
-  print("LENGTH", length)
+  if debug:
+    length = 0
+    for element in dataset:
+      print(element)
+      length += 1
+    print("LENGTH", length)
 
   # Shuffle examples
   if shuffle:
@@ -227,11 +229,13 @@ def id_decode_extract_and_batch(
 
   # Make batches
   dataset = dataset.batch(batch_size, drop_remainder=True)
-  length = 0
-  for element in dataset:
-    print(element)
-    length += 1
-  print("LENGTH", length)
+
+  if debug:
+    length = 0
+    for element in dataset:
+      print(element)
+      length += 1
+    print("LENGTH", length)
 
   # Prefetch a number of batches
   if prefetch_size is not None:

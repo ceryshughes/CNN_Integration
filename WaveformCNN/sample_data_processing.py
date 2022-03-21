@@ -2,7 +2,7 @@
 # -inputs are .wav files in a folder with ID names
 # -gold labels are in a csv file with a FileID column and a Category column; each row represents a file
 
-debug = True
+debug = False
 
 import cnn
 import id_loader #From Donahue's WaveGan
@@ -88,7 +88,7 @@ def get_sample_data(args):
         prefetch_size=args.train_batch_size * 4,
         prefetch_gpu_num=args.data_prefetch_gpu_num)
 
-    print(sample_gold_batches)
+    #print(sample_gold_batches)
     #sample_gold_batches = sample_gold_batches[:, :, 0] Donahue's code does this; not sure why, it may be an earlier version thing
 
     #Separate the audio data from the filenames
@@ -99,23 +99,31 @@ def get_sample_data(args):
     #Change the filenames to string categories
     file_category_maps = get_golds("sample_file_info.csv")
     batch_categories = batch_filenames.map(lambda name: tensor_categories(name, file_category_maps))
-    category_encodings = category_encoder(list(set(file_category_maps.values())))
-    batch_encoded_categories = batch_categories.map(lambda category: tensor_encodings(category, category_encodings))
+    category_to_encoding, encoding_to_category = category_encoder(list(set(file_category_maps.values())))
+    batch_encoded_categories = batch_categories.map(lambda category: tensor_encodings(category, category_to_encoding))
 
 
-    return batch_audio_vectors, batch_filenames, batch_encoded_categories, category_encodings
+    return batch_audio_vectors, batch_filenames, batch_encoded_categories, category_to_encoding
 
 #Tensorflow strings can't be used like normal Python strings; if you want to call a string function on them,
 # you have to wrap operations in a
 #function that takes a Numpy array and then apply it using numpy_func
 def helper_basename(numpy_strings):
-    return np.apply_along_axis(lambda fn: os.path.basename(fn), 0, numpy_strings)
+    result = [os.path.basename(filename) for filename in numpy_strings]
+    if debug:
+        print(numpy_strings)
+        print(result)
+    return np.array(result)
+
+
 
 #Note: these two can be combined into one function because they do the same thing
 def helper_categories(numpy_strings, file_category_maps):
-    return np.apply_along_axis(lambda file: file_category_maps[file], 0, numpy_strings)
+    return np.array([file_category_maps[file.decode('utf-8')] for file in numpy_strings])
+   # return np.apply_along_axis(lambda file: file_category_maps[file], 0, numpy_strings)
 def helper_encodings(numpy_strings, category_encodings):
-    return np.apply_along_axis(lambda file: category_encodings[file], 0, numpy_strings)
+    return np.array([category_encodings[cat.decode('utf-8')] for cat in numpy_strings])
+    #return np.apply_along_axis(lambda file: category_encodings[file], 0, numpy_strings)
 
 def tensor_basename(tensor):
     return tf.numpy_function(helper_basename, [tensor], tf.string)
@@ -126,7 +134,7 @@ def tensor_categories(tensor, file_category_maps):
                              [tensor], tf.string)
 def tensor_encodings(tensor, category_encodings):
     return tf.numpy_function(lambda string: helper_categories(string, category_encodings),
-                             [tensor], tf.string)
+                             [tensor], tf.int32)
 
 
 
@@ -243,4 +251,10 @@ def train_cnn(wav_data, gold_data):
 
 if __name__ == "__main__":
     args = arguments().parse_args()
-    get_sample_data(args)
+    audio, filenames, gold_labels, category_encodings = get_sample_data(args)
+    #print(audio)
+    print("Gold labels")
+    for element in gold_labels:
+        print(element)
+    print("Category encodings")
+    print(category_encodings)
