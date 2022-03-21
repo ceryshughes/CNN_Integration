@@ -7,6 +7,7 @@ import tensorflow as tf
 
 import sys
 
+debug = True
 
 def decode_audio(fp, fs=None, num_channels=1, normalize=False, fast_wav=False):
   """Decodes audio file paths into 32-bit floating point vectors.
@@ -242,12 +243,13 @@ def id_decode_extract_and_batch(
             '/device:GPU:{}'.format(prefetch_gpu_num)))
 
 
-  # Get tensors - why is this part necessary? Oh, because of prefetching
+  # Get tensors - why is this part necessary? Oh, because of prefetching? No... prefetching just returns
+  #a dataset with the same interface as any other...
   #Cerys: updated iterator code to Tensorflow v2
-  iterator = iter(dataset)
+  #iterator = iter(dataset)
 
-  return next(iterator) #Cerys: isn't this throwing away a bunch of batches?
-
+  #return next(iterator) #Cerys: isn't this throwing away a bunch of batches?
+  return dataset
 
 # Cerys: A helper function to pass into Dataset.map to extract either the filenames or the audio from the batched dataset, maintaining
 # order

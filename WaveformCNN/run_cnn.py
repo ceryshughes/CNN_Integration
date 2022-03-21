@@ -2,6 +2,7 @@
 # -inputs are .wav files in a folder with ID names
 # -gold labels are in a csv file with a FileID column and a Category column; each row represents a file
 
+debug = True
 
 import cnn
 import id_loader #From Donahue's WaveGan
@@ -86,14 +87,17 @@ def get_sample_data(args):
         prefetch_gpu_num=args.data_prefetch_gpu_num)
 
     print(sample_gold_batches)
-    sample_gold_batches = sample_gold_batches[:, :, 0]
+    #sample_gold_batches = sample_gold_batches[:, :, 0] Donahue's code does this; not sure why, it may be an earlier version thing
 
     #Separate the audio data from the filenames
-    batch_filenames = sample_gold_batches.map(lambda batch: id_loader.separate_in_batch(0,batch))
-    batch_audio_vectors = sample_gold_batches.map(lambda batch: id_loader.separate_in_batch(1,batch))
+    #batch_filenames = sample_gold_batches.map(lambda batch: id_loader.separate_in_batch(0,batch))
+    batch_filenames = sample_gold_batches.map(lambda fn, audio: fn)
+    batch_filenames = batch_filenames.map(lambda fn: os.path.basename(fn.numpy().decode('ascii')))
+    #batch_audio_vectors = sample_gold_batches.map(lambda batch: id_loader.separate_in_batch(1,batch))
+    batch_audio_vectors = sample_gold_batches.map(lambda fn, audio: audio)
 
     #Change the filenames to string categories
-    #TODO: reach into batches
+    #TODO: reach into batches - actually maybe not; The docs don't explain this that I can find, but it seems Dataset mapping functions let you ignore the batch level
     file_category_maps = get_golds("sample_file_info.csv")
     batch_categories = batch_filenames.map(lambda file: file_category_maps[file.numpy().decode('ascii')])
     category_encodings = category_encoder(list(set(file_category_maps.values())))
