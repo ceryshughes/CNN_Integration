@@ -1,0 +1,1863 @@
+---
+output:
+  pdf_document: 
+    toc: true
+    toc_depth: 4
+    number_sections: true
+#  html_document:
+#    css: /Users/johnkingston/Dropbox/692F/fall17/lectures/css/Dillon_UMass.css
+#    css: /Users/jkingstn/Dropbox/692F/fall17/lectures/css/Dillon_UMass.css
+#    css: ~/Dropbox/Courses/LING609-Fall2014/Website/Dillon_UMass.css
+#    css: /Users/jkingstn/Dropbox/692F/fall17/lectures/css/Dillon_UMass.css
+---
+
+# Set up
+
+## Libraries
+
+```{r}
+
+library(tidyverse)
+library(knitr)
+library(ggpubr)
+
+```
+
+## Save figures
+
+```{r 'setup', echo=FALSE, cache=FALSE}
+
+require("knitr")
+opts_knit$set(root.dir = "/Users/jkingstn/Dropbox/current projects/newNonSpeech/pilots_25feb19/intensity/newman/pilot29sep20")
+opts_chunk$set(dev = c("CairoPDF"), fig.align="center", fig.height = 9, fig.width = 8, out.width = "0.95\\linewidth", fig.path='figures/', pdf.options(encoding = "ISOLatin9.enc"))
+
+```
+
+
+# Setting up synthesis parameters for /ba-pa/
+
+25 September 19
+
+09 March 20: Updated to implement intensity and voice quality trajectories.
+
+05 April 20: Make entirely voiced vowel with the desired formant transitions. Then:
+
+1. Cut its beginning back progressively and splice on the corresponding VOT interval. Synthesize that with the same formant transitions but excited by aspiration rather than voicing,
+2. Apply the contrasting intensity or voice quality trajectories to the voicing portion of the vowel.
+
+07 Apr 20: Reverted to first approach, because it's impossible to create a voice quality trajectory by this method. Also changed some parameter values: lower intensity aspiration, coarser rise time and voice quality steps.
+
+Try a version with bursts = version04.
+
+29 September 20
+
+Subdivide the trajectories for rise time and voice quality more finely, with intervals differing by 15 instead of 20 ms: 10, 25, 40, 55, 70
+
+Increase the vowel's duration by half the increase in VOT, i.e., 8 ms for each 16 ms increase in VOT.
+
+**Update 06 Feb 22**
+
+## Dimensions
+
+Dimensions varied in synthesis are:
+
+1. VOT: 2 endpoint values, and 3-5 ambiguous values,
+2. Amplitude of the aspiration relative to vowel: 3 ratios (in dB) 6:1, 1:1, 1:6,
+3. Rise time of vowel onset: Steep, as in /ba/, versus shallow, as in /pa/,
+4. Voice quality: breathy versus modal, implemented as steep /ba/ versus shallow /pa/ change from breathy to modal,
+5. Eventually, spatial location of the vowel (the context) relative to the aspiration: at midline, like the aspiration, versus detectably off-midline.
+
+06 Feb 02: 5 VOTs * 3 Aspiration intensities * 5 trajectories intensity/voice quality = 150 distinct stimuli before manipulating location of the vowel!
+
+29 Sep 
+
+## Directory
+
+```{r}
+dataPath <- getwd()
+dataPath <- paste(dataPath, "soundFiles", sep = "/")
+```
+
+## Version
+
+Versions for each date:
+
+```{r}
+version01 = "10mar20"
+version02 = "05apr20"
+version03 = "07apr20"
+version04 = "07apr20_bursts"
+version05 = "29sep20"
+version07 = "13feb22"
+version08 = "14feb22"
+```
+
+## Vectors
+
+### VOT
+
+Range of VOT values: 0-60 in 8 ms steps. We'll eventually select a subset for use.
+
+```{r}
+
+# 06 Feb 22
+#vot <- seq(0.0, 0.064, 0.008)
+
+# 13 Feb 22
+vot <- seq(0.007, 0.040, 0.011)
+
+vot
+
+```
+
+### Amplitude
+
+Range of aspiration and voicing amplitude values. Assume that the base amplitude of the vowel is 72 dB. 07 Apr 20: Set aspiration amplitudes at 27 + (-6, 0, 6) dB. Otherwise much too intense.
+
+```{r}
+
+dBVowel <- 72
+dBAsp <- 27 + c(-6, 0, 6)
+
+# following Benki for bilabials: first value at release, second 5 ms later
+dBBurst <- c(45, 35) 
+dBAsp
+
+
+```
+
+### Rise time
+
+Range of rise times from abrupt to gradual. Again, we'll select from the outputs. 07 Apr 20: Extremes are 0.01 and 0.07 seconds, at 0.02 s steps.
+
+29 Sep 20: 0.015 s steps
+
+```{r}
+
+#riseTime <- seq(0.010, 0.070, 0.020)
+# 06 Feb 22
+# riseTime <- seq(0.010, 0.070, 0.015)
+
+# 13 Feb 22
+
+riseTime <- c(0.010, 0.070)
+
+riseTime
+
+```
+
+### Open phase and spectral tilt
+
+Manipulate open phase and spectral tilt like rise time. 07 Apr 20 range 0.01-0.07 s in 0.02 steps.
+
+```{r}
+
+breathyQuotient <- 0.9
+modalQuotient <- 0.5
+
+breathyTilt <- 18
+modalTilt <- 0.0
+
+# voice quality ramps
+
+# 06 Feb 22
+# openPhase <- seq(0.010, 0.070, 0.015)
+# spectralTilt <- seq(0.010, 0.070, 0.015)
+
+#13 Feb 22
+openPhase <- c(0.010, 0.070)
+spectralTilt <- c(0.010, 0.070)
+
+openPhase; spectralTilt
+
+```
+
+### Total duration of the stimuli
+
+Currently, the stimulus duration is 0.35 s, 350 ms. A shorter duration would shorten the vowel proportionally too much as VOT increased. If the total stimulus duration is 0.35 s, then the vowel lasts a maximum of 0.330 s given the 0.01 s of silence at the beginning and end. If VOT ranges from 0.01 to 0.06 s, then proportion of aspiration to vowel ranges from $10/320 = 0.031$ to $60/320 = 0.23$. Do we instead want to increase the vowel duration with VOT, such that it remains constant across VOTs? The "extendTotalDuration" flag is used to do so, when it's set to a value greater than 0.
+
+```{r}
+
+totalDuration <- 0.35
+
+# add a switch to increase total duration with VOT, 
+# by factor represented by extendTotalDuration
+
+# extendTotalDuration <- 1
+extendTotalDuration <- 0.5
+
+```
+
+### Plot rise time and aspiration values
+
+Test the rise time and aspiration profiles.
+
+Rise time
+
+```{r}
+
+# voicing amplitude values begin with 0 for 0.01 s, then 0 for VOT, then rise from 0 to target over the rise time interval
+
+for (v in 1:length(vot)) {
+  for (r in 1:length(riseTime)) {
+    vt <- vot[v] + 0.01
+    rt <- riseTime[r] + vt
+    tmpTime <- c(0.0, 0.01, vt, rt, totalDuration - 0.025, totalDuration - 0.01, totalDuration)
+    if (v == 1 & r == 1) {
+      intensityTime <- tmpTime
+    }
+    else {
+      intensityTime <- cbind(intensityTime, tmpTime)
+    }
+  }
+}
+
+vt; rt
+
+intensityTime <- data.frame(intensityTime)
+
+intensityProfile <- c(0, 0, 0, dBVowel, dBVowel, 0, 0)
+
+intensityTime; intensityProfile
+
+plot(intensityTime[,1], intensityProfile,
+     type = "l")
+lines(intensityTime[,3], intensityProfile,
+     type = "l",
+     lty = 2)
+lines(intensityTime[,5], intensityProfile,
+     type = "l",
+     lty = 2)
+lines(intensityTime[,7], intensityProfile,
+     type = "l",
+     lty = 2)
+
+# 13 Feb 22
+# lines(intensityTime[,9], intensityProfile,
+#      type = "l",
+#      lty = 2)
+# lines(intensityTime[,10], intensityProfile,
+#      type = "l",
+#      lty = 2,
+#      col = "red")
+# lines(intensityTime[,12], intensityProfile,
+#      type = "l",
+#      lty = 2,
+#      col = "red")
+# lines(intensityTime[,14], intensityProfile,
+#      type = "l",
+#      lty = 2,
+#      col = "red")
+# lines(intensityTime[,16], intensityProfile,
+#      type = "l",
+#      lty = 2,
+#      col = "red")
+# lines(intensityTime[,18], intensityProfile,
+#      type = "l",
+#      lty = 2,
+#      col = "red")
+lines(intensityTime[,ncol(intensityTime)-6], intensityProfile,
+     type = "l",
+     lty = 2,
+     col = "blue")
+lines(intensityTime[,ncol(intensityTime)-4], intensityProfile,
+     type = "l",
+     lty = 2,
+     col = "blue")
+lines(intensityTime[,ncol(intensityTime)-2], intensityProfile,
+     type = "l",
+     lty = 2,
+     col = "blue")
+lines(intensityTime[,ncol(intensityTime)-0], intensityProfile,
+     type = "l",
+     lty = 2,
+     col = "blue")
+# lines(intensityTime[,ncol(intensityTime)], intensityProfile,
+#      type = "l",
+#      lty = 2,
+#      col = "blue")
+
+abline(v = 0.01)
+abline(v = max(vot) + 0.01)
+```
+
+Aspiration
+
+```{r}
+
+# voicing amplitude values begin with 0 for 0.01 s, then 0 for VOT, then rise from 0 to target over the rise time interval
+
+for (v in 1:length(vot)) {
+    vt <- vot[v] + 0.01
+    offset <- vt + 0.005
+    tmpTime <- c(0.0, 0.01, 0.015, vt, offset, totalDuration)
+    if (v == 1) {
+      aspirationTime <- tmpTime
+    }
+    else {
+      aspirationTime <- cbind(aspirationTime, tmpTime)
+    }
+}
+
+aspirationTime <- data.frame(aspirationTime)
+
+aspirationTime
+
+aspirationProfile <- c(0, 0, dBAsp[2], dBAsp[2], 0, 0)
+
+plot(aspirationTime[,1], aspirationProfile,
+     type = "l")
+lines(aspirationTime[,3], aspirationProfile,
+     type = "l",
+     lty = 2)
+# lines(aspirationTime[,5], aspirationProfile,
+#      type = "l",
+#      lty = 2)
+# lines(aspirationTime[,7], aspirationProfile,
+#      type = "l",
+#      lty = 2)
+
+
+vot; max(vot)
+
+abline(v = 0.01)
+abline(v = max(vot))
+abline(v = max(vot) + 0.010)
+```
+
+### Pitch
+
+```{r}
+pitch = c(125, 125)
+```
+
+### Formants
+
+```{r}
+# center frequencies
+f1 <- c(350, 750)
+f2 <- c(round(0.75*1250,0), 1250)
+f3 <- c(round(0.8*2500,0), 2500)
+f4 <- c(round(0.85*3500,0), 3500)
+f5 <- c(round(0.9*4500,0), 4500)
+# bandwidths
+# b1 set to a broader value during the aspiration interval
+b1 <- c(250, 60)
+b2 <- 90
+b3 <- 120
+b4 <- 180
+b5 <- 270
+```
+
+### End of the formant transitions
+
+```{r}
+endTransitions <- 0.07
+```
+
+### Spatial location
+
+This is handled with another Praat script.
+
+## Creating KlattGrids
+
+### Fixed values
+
+What's the base name for the KlattGrid? How many formants?
+
+```{r}
+
+baseName <- "newman"
+numberFormants <- 5
+
+```
+
+### Remove any existing KlattGrid
+
+If a KlattGrid exists with this base name, remove it.
+
+```{r}
+newName <- paste(baseName,".KlattGrid", sep="")
+if (file.exists(newName)) {
+  file.remove(newName)
+}
+```
+
+### Parameters 10 March 20 version01; 07 Apr 20 version03
+
+#### Rise time manipulations
+
+07 Apr 20: Approximate a raised cosine ramp up to create a steeper rise. 13 Feb 22: Use linear rise. 14 Feb 22: Set output sample rate to 44100 Hz.
+
+```{r}
+
+# VOTs
+for (j in 1:length(vot)) {
+# relative amplitudes    
+  for (k in 1:length(dBAsp)) {
+# rise times      
+    for (m in 1:length(riseTime)) {
+# write out beginning of parameters for each token
+      if (vot[j] < 0.01) {
+        fileName <- paste(baseName, "_VOT_0", round(vot[j]*1000,0), "_Asp_", round(dBAsp[k],0), "_RT_", round(riseTime[m]*1000,0),"_V_",round(dBVowel,0), sep = "")        
+      }
+      else {
+        fileName <- paste(baseName, "_VOT_", round(vot[j]*1000,0), "_Asp_", round(dBAsp[k],0), "_RT_", round(riseTime[m]*1000,0),"_V_",round(dBVowel,0), sep = "")
+      }
+# should the vowel be extended to make up for each increase in VOT?
+      if (extendTotalDuration > 0) {
+        fileName <- paste(fileName, "_extended", sep = "")
+        maximumDuration <- totalDuration + extendTotalDuration * vot[j]
+      }
+      else {
+        maximumDuration <- totalDuration
+      }
+      lineOut <- paste("Create KlattGrid...", fileName, "0", maximumDuration, numberFormants, "2", "2", numberFormants, "1", "1", "1", sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#      
+      tmpVOT <- vot[j]
+      tmpAsp <- dBAsp[k]
+      tmpRT <- riseTime[m]
+
+################### 
+
+# set open phase to modal value throughout the file      
+      outValue = modalQuotient
+      time = 0.0
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# set spectral tilt to modal value throughout the file      
+      outValue = modalTilt
+      time = 0.0
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+
+##################
+
+# voicing amplitude
+# start with 10 ms of silence
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.010
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset
+# add 0.01 seconds to VOT
+      tmpVOT <- tmpVOT + 0.010
+# if VOT > 0, delay voice onset by that amount
+      if (tmpVOT > 0.010) {
+        time <- tmpVOT
+        outValue <- 0.0
+        lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      }
+# then rise to target vowel value over current rise time
+# 07 Apr 20: in place of a linear ramp approximate a raised cosine ramp to produce a steeper rise
+# 13 Feb 22: see below
+      # time <- round(0.2 * (tmpRT + tmpVOT), 3)
+      # outValue <- round(0.25 * dBVowel, 1)
+      # lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      # cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      # time <- round(0.6 * (tmpRT + tmpVOT), 3)
+      # outValue <- round(0.77 * dBVowel, 1)
+      # lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      # cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+
+# 13 Feb 22: use linear ramp
+      time <- tmpRT + tmpVOT
+      outValue <- dBVowel
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+# specify remainder of the amplitude of voicing interval up to 25 ms before the end
+      time <- maximumDuration - 0.025
+      outValue <- dBVowel
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# ramp amplitude down to 0 and leave it there for the last 10 ms
+      time <- maximumDuration - 0.010
+      outValue <- 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# last 10 ms
+      time <- maximumDuration
+      outValue <- 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+#
+      
+######################
+# aspiration amplitude
+# start with 10 ms of silence
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.01
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset; rise to target aspiration value in 0.005 seconds
+      time <- 0.015
+      outValue <- tmpAsp
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder of the amplitude of aspiration interval, to end of VOT
+      if (tmpVOT > 0.01) {
+        time <- tmpVOT + 0.005
+        outValue <- tmpAsp
+        lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      }
+# ramp amplitude down to 0 in 5 ms
+        time <- tmpVOT + 0.01
+        outValue <- 0.0
+        lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# leave amplitude at 0 until the end
+      time <- maximumDuration
+      outValue <- 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+
+# frication amplitude
+      time <- 0
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+#
+      time <- 0.01
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.015
+      outValue <- dBBurst[1]
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+#
+      time <- 0.020
+      outValue <- dBBurst[2]
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.025
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#      
+      time <- maximumDuration
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)      
+#
+#####
+#
+# pitch
+      time <- 0.0
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration - 0.05
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- pitch[2]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#
+#####
+#
+# F1
+      formant = 1
+      time <- 0.0
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B1
+      time <- 0.0
+      outValue <- b1[1]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- tmpVOT
+      outValue <- b1[1]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- tmpVOT + tmpRT
+      outValue <- b1[2]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- b1[2]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A1
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F2
+      formant = 2
+      time <- 0.0
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B2
+      time <- 0.0
+      outValue <- b2
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A2
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F3
+      formant = 3
+      time <- 0.0
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B3
+      time <- 0.0
+      outValue <- b3
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A3
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F4
+      formant = 4
+      time <- 0.0
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B4
+      time <- 0.0
+      outValue <- b4
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A4
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F5
+      formant = 5
+      time <- 0.0
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B5
+      time <- 0.0
+      outValue <- b5
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A5
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# #      
+      lineOut <- paste("To Sound (special)... 0 0 44100 yes yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      lineOut <- paste("select Sound", fileName, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      savePath <- paste(dataPath,"/",fileName,".wav", sep="")
+      lineOut <- paste("Save as WAV file...", savePath, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)    
+    }
+  } 
+}
+
+```
+
+### Name the output KlattGrid
+
+07 Apr 20: Use version03
+
+06 Feb 22: Use version06
+
+13 Feb 22: Use version07
+
+```{r}
+
+version06 = "06feb22"
+
+```
+
+```{r}
+
+# newName <- paste(baseName,version01,"RT.KlattGrid", sep="_")
+# newName <- paste(baseName,version03,"RT.KlattGrid", sep="_")
+# newName <- paste(baseName,version04,"RT.KlattGrid", sep="_")
+#newName <- paste(baseName,version05,"RT.KlattGrid", sep="_")
+# newName <- paste(baseName,version06,"RT.KlattGrid", sep="_")
+#newName <- paste(baseName,version07,"RT.KlattGrid", sep="_")
+newName <- paste(baseName,version08,"RT.KlattGrid", sep="_")
+file.rename("fileOut.KlattGrid", newName)
+
+```
+
+
+#### Open quotient and spectral tilt
+
+Open quotient and spectral tilt are represented as VQ in the file names, and their time courses are identical.
+
+```{r}
+
+
+# VOTs
+for (j in 1:length(vot)) {
+# relative amplitudes    
+  for (k in 1:length(dBAsp)) {
+# open phases and spectral tilts      
+    for (m in 1:length(openPhase)) {
+# write out beginning of parameters for each token
+      if (vot[j] < 0.01) {
+              fileName <- paste(baseName, "_VOT_0", round(vot[j]*1000,0), "_Asp_", round(dBAsp[k],0), "_VQ_", round(riseTime[m]*1000,0),"_V_",round(dBVowel,0), sep = "")
+      }
+      else{
+        fileName <- paste(baseName, "_VOT_", round(vot[j]*1000,0), "_Asp_", round(dBAsp[k],0), "_VQ_", round(riseTime[m]*1000,0),"_V_",round(dBVowel,0), sep = "")
+      }
+# should the vowel be extended to make up for each increase in VOT?
+      if (extendTotalDuration > 0) {
+        fileName <- paste(fileName, "_extended", sep = "")
+        maximumDuration <- totalDuration + extendTotalDuration * vot[j]
+      }
+      else {
+        maximumDuration <- totalDuration
+      }
+      lineOut <- paste("Create KlattGrid...", fileName, "0", maximumDuration, numberFormants, "2", "2", numberFormants, "1", "1", "1", sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#      
+      tmpVOT <- vot[j]
+      tmpAsp <- dBAsp[k]
+      tmpOP <- openPhase[m]
+      tmpST <- spectralTilt[m]
+
+###################      
+# voicing amplitude
+# start with 10 ms of silence
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.010
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset
+# add 0.01 seconds to VOT
+      tmpVOT <- tmpVOT + 0.010
+# if VOT > 0, delay voice onset by that amount
+      if (tmpVOT > 0.010) {
+        time <- tmpVOT
+        outValue <- 0.0
+        lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      }
+# set rise to target vowel value over 0.01 s after VOT
+      time <- 0.01 + tmpVOT
+      outValue <- dBVowel
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder of the amplitude of voicing interval up to 25 ms before the end
+      time <- maximumDuration - 0.025
+      outValue <- dBVowel
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# ramp amplitude down to 0 and leave it there for the last 10 ms
+      time <- maximumDuration - 0.010
+      outValue <- 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# last 10 ms
+      time <- maximumDuration
+      outValue <- 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+#
+      
+######################
+# open quotient
+      
+# start with breathy quotient
+      outValue = modalQuotient
+      time = 0.0
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.010
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset
+# don't add another 0.01 seconds to VOT
+      tmpVOT <- tmpVOT
+# if VOT > 0, delay voice onset by that amount
+      if (tmpVOT > 0.010) {
+        time <- tmpVOT - 0.005
+        outValue <- modalQuotient
+        lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+        time <- tmpVOT
+        outValue <- breathyQuotient
+        lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      }
+# then shift to modal value over rise time interval
+      time <- tmpOP + tmpVOT
+      outValue <- modalQuotient
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder of voicing interval with modal value up to 25 ms before the end
+      time <- maximumDuration - 0.025
+      outValue <- modalQuotient
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# ramp amplitude down to 0 and leave it there for the last 10 ms
+      time <- maximumDuration - 0.010
+      outValue <- modalQuotient
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# last 10 ms
+      time <- maximumDuration
+      outValue <- modalQuotient
+      lineOut <- paste("Add open phase point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+#############################
+      
+# spectral tilt
+# start with breathy tilt
+      outValue = modalTilt
+      time = 0.0
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.010
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset
+# don't add another 0.01 seconds to VOT
+      tmpVOT <- tmpVOT
+# if VOT > 0, delay voice onset by that amount
+      if (tmpVOT > 0.010) {
+        time <- tmpVOT - 0.005
+        outValue <- modalTilt
+        lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+        time <- tmpVOT
+        outValue <- breathyTilt
+        lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)        
+      }
+# then shift to target vowel value over current rise time
+      time <- tmpST + tmpVOT
+      outValue <- modalTilt
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder voicing interval with modal value up to 25 ms before the end
+      time <- maximumDuration - 0.025
+      outValue <- modalTilt
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# ramp amplitude down to 0 and leave it there for the last 10 ms
+      time <- maximumDuration - 0.010
+      outValue <- modalTilt
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# last 10 ms
+      time <- maximumDuration
+      outValue <- modalTilt
+      lineOut <- paste("Add spectral tilt point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+      
+######################
+# aspiration amplitude
+# start with 10 ms of silence
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.01
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset; rise to target aspiration value in 0.005 seconds
+      time <- 0.015
+      outValue <- tmpAsp
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder of the amplitude of aspiration interval, to end of VOT
+      if (tmpVOT > 0.01) {
+        time <- tmpVOT + 0.005
+        outValue <- tmpAsp
+        lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      }
+# ramp amplitude down to 0 in 5 ms
+        time <- tmpVOT + 0.01
+        outValue <- 0.0
+        lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+        cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# leave amplitude at 0 until the end
+      time <- maximumDuration
+      outValue <- 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# frication amplitude
+      time <- 0
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+#
+      time <- 0.01
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.015
+      outValue <- dBBurst[1]
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+#
+      time <- 0.020
+      outValue <- dBBurst[2]
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.025
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#      
+      time <- maximumDuration
+      outValue <- 0
+      lineOut <- paste("Add frication amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+#
+#####
+#
+# pitch
+      time <- 0.0
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration - 0.05
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- pitch[2]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#
+#####
+#
+# F1
+      formant = 1
+      time <- 0.0
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B1
+      time <- 0.0
+      outValue <- b1[1]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- tmpVOT
+      outValue <- b1[1]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- tmpVOT + tmpRT
+      outValue <- b1[2]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- b1[2]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A1
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F2
+      formant = 2
+      time <- 0.0
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B2
+      time <- 0.0
+      outValue <- b2
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A2
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F3
+      formant = 3
+      time <- 0.0
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B3
+      time <- 0.0
+      outValue <- b3
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A3
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F4
+      formant = 4
+      time <- 0.0
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B4
+      time <- 0.0
+      outValue <- b4
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A4
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F5
+      formant = 5
+      time <- 0.0
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B5
+      time <- 0.0
+      outValue <- b5
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A5
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# #      
+      lineOut <- paste("To Sound (special)... 0 0 44100 yes yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      lineOut <- paste("select Sound", fileName, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      savePath <- paste(dataPath,"/",fileName,".wav", sep="")
+      lineOut <- paste("Save as WAV file...", savePath, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)    
+    }
+  } 
+}
+
+```
+
+### Name the output KlattGrid
+
+07 Apr 20: Use version03; or use version04 if you want a burst
+
+```{r}
+
+# newName <- paste(baseName,version01,"VQ.KlattGrid", sep="_")
+# newName <- paste(baseName,version03,"VQ.KlattGrid", sep="_")
+# newName <- paste(baseName,version04,"VQ.KlattGrid", sep="_")
+# newName <- paste(baseName,version05,"VQ.KlattGrid", sep="_")
+# newName <- paste(baseName,version06,"VQ.KlattGrid", sep="_")
+# newName <- paste(baseName,version07,"VQ.KlattGrid", sep="_")
+newName <- paste(baseName,version08,"VQ.KlattGrid", sep="_")
+file.rename("fileOut.KlattGrid", newName)
+
+```
+
+
+### Parameters 05 April 20 version02
+
+#### Synthesize an entirely voiced vowel with the desired formant transitions.
+
+```{r}
+
+# need a file name
+      fileName <- paste(baseName, "_Voiced", sep = "")
+# should the vowel be extended to make up for each increase in VOT?
+      if (extendTotalDuration > 0) {
+        fileName <- paste(fileName, "_extended", sep = "")
+        maximumDuration <- totalDuration + extendTotalDuration * max(vot)
+      } else {
+        maximumDuration <- totalDuration
+      }
+      lineOut <- paste("Create KlattGrid...", fileName, "0", maximumDuration, numberFormants, "2", "2", numberFormants, "1", "1", "1", sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+
+###################      
+# voicing amplitude
+# start with 10 ms of silence
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.010
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset
+# then rise to target vowel value over current rise time
+      time <- 0.015
+      outValue <- dBVowel
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder of the amplitude of voicing interval up to 25 ms before the end
+      time <- maximumDuration - 0.025
+      outValue <- dBVowel
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# ramp amplitude down to 0 and leave it there for the last 10 ms
+      time <- maximumDuration - 0.010
+      outValue <- 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# last 10 ms
+      time <- maximumDuration
+      outValue <- 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+#
+      
+#
+#####
+#
+# pitch
+      time <- 0.0
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration - 0.05
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- pitch[2]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#
+#####
+#
+# F1
+      formant = 1
+      time <- 0.0
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions 
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+
+      # B1; use the vowel target value throughout
+      time <- 0.0
+      outValue <- b1[2]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- b1[2]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A1
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F2
+      formant = 2
+      time <- 0.0
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B2
+      time <- 0.0
+      outValue <- b2
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A2
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F3
+      formant = 3
+      time <- 0.0
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B3
+      time <- 0.0
+      outValue <- b3
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A3
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F4
+      formant = 4
+      time <- 0.0
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B4
+      time <- 0.0
+      outValue <- b4
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A4
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F5
+      formant = 5
+      time <- 0.0
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B5
+      time <- 0.0
+      outValue <- b5
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A5
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# #      
+      lineOut <- paste("To Sound (special)... 0 0 10000 no yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      lineOut <- paste("select Sound", fileName, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      savePath <- paste(dataPath,"/",fileName,".wav", sep="")
+      lineOut <- paste("Save as WAV file...", savePath, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)    
+
+```
+
+### Name the output KlattGrid
+
+```{r}
+
+# newName <- paste(baseName,version02,"Voiced.KlattGrid", sep="_")
+newName <- paste(baseName,version05,"Voiced.KlattGrid", sep="_")
+file.rename("fileOut.KlattGrid", newName)
+
+```
+
+Synthesize an entirely aspirated vowel with the desired formant transitions.
+
+```{r}
+
+for (k in 1:length(dBAsp)) {
+
+  tmpAsp <- dBAsp[k]
+
+# need a file name
+      fileName <- paste(baseName, "_Aspirated_", round(tmpAsp), sep = "")
+# should the vowel be extended to make up for each increase in VOT?
+      if (extendTotalDuration > 0) {
+        fileName <- paste(fileName, "_extended", sep = "")
+        maximumDuration <- totalDuration + extendTotalDuration * max(vot)
+      } else {
+        maximumDuration <- totalDuration
+      }
+      lineOut <- paste("Create KlattGrid...", fileName, "0", maximumDuration, numberFormants, "2", "2", numberFormants, "1", "1", "1", sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+
+###################      
+# voicing amplitude, must be included otherwise the .KlattGrid doesn't run
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add voicing amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+      
+# aspiration amplitude
+# start with 10 ms of silence
+      outValue = 0.0
+      time = 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)      
+      time = 0.010
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of silent onset
+# then rise to target vowel value over current rise time
+      time <- 0.015
+      outValue <- tmpAsp
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# specify remainder of the amplitude of interval up to end of maximum VOT
+      time <- max(vot) + 0.01
+      outValue <- tmpAsp
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# ramp amplitude down to 0 0.01 s later
+      time <- max(vot) + 0.02
+      outValue <- 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T) 
+# last 10 ms
+      time <- maximumDuration
+      outValue <- 0.0
+      lineOut <- paste("Add aspiration amplitude point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+# end of entry
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T) 
+#
+      
+#
+#####
+#
+# pitch
+      time <- 0.0
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration - 0.05
+      outValue <- pitch[1]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- pitch[2]
+      lineOut <- paste("Add pitch point...", time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#
+#####
+#
+# F1
+      formant = 1
+      time <- 0.0
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f1[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f1[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B1; use first value of bandwidth throughout
+      time <- 0.0
+      outValue <- b1[1]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- b1[1]
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A1
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F2
+      formant = 2
+      time <- 0.0
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f2[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f2[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B2
+      time <- 0.0
+      outValue <- b2
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A2
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F3
+      formant = 3
+      time <- 0.0
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f3[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f3[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B3
+      time <- 0.0
+      outValue <- b3
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A3
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F4
+      formant = 4
+      time <- 0.0
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f4[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f4[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B4
+      time <- 0.0
+      outValue <- b4
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A4
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# F5
+      formant = 5
+      time <- 0.0
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- 0.01
+      outValue <- f5[1]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- endTransitions
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      time <- maximumDuration
+      outValue <- f5[2]
+      lineOut <- paste("Add oral formant frequency point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# B5
+      time <- 0.0
+      outValue <- b5
+      lineOut <- paste("Add oral formant bandwidth point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+# A5
+      time <- 0.0
+      outValue <- 60
+      lineOut <- paste("Add oral formant amplitude point...", formant, time, outValue, sep = " ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)
+#      
+      lineOut <- paste("To Sound (special)... 0 0 10000 no yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+#
+      lineOut <- paste("select Sound", fileName, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      savePath <- paste(dataPath,"/",fileName,".wav", sep="")
+      lineOut <- paste("Save as WAV file...", savePath, sep=" ")
+      cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
+      cat("\n", file="fileOut.KlattGrid", append = T)    
+}
+```
+
+### Name the output KlattGrid
+
+
+```{r}
+
+# newName <- paste(baseName,version02,"Aspiration.KlattGrid", sep="_")
+newName <- paste(baseName,version05,"Aspiration.KlattGrid", sep="_")
+file.rename("fileOut.KlattGrid", newName)
+
+```
+

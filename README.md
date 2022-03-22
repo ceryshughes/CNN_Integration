@@ -1,6 +1,23 @@
 # CNN_Integration
 A replication of the CNNs used in Donahue's WaveGAN discriminator (and motivated by Begus's application of WaveGAN to sound change) for the purposes of conducting probing analogous to human acoustic integration experiments, specifically those in Kingston et al (2008).
 
+Required Python libraries:
+-numpy
+-tensorflow
+-keras
+-librosa
+
+For the VCV processing code,
+-textgrid: https://github.com/kylebgorman/textgrid
+
+Main function runnable:
+cnn.py
+sample_data_processing.py
+
+Still writing: 
+compute_vcv_distributions.py
+praat_vcv_synthesis.R
+test_cnn.py
 
 Files and directories in WaveformCNN:
 cnn.py: Definition of the CNN architecture and training procedure as an extension of the Keras Model class, replicating Donahue's WaveGAN discriminator (although for a truly faithful representation, I still need to add gradient clipping to training)
