@@ -80,10 +80,10 @@ write_formant_timecourse <- function(out_file_name,
                                      closure_begin,
                                      closure_end,
                                      v2_steady_begin,
-                                     v2_end 
+                                     v2_end, voicing = FALSE 
 ){
   
-  constant_amp <- 1
+  #constant_amp <- 10
   
   #Steady state portion of v1
   write_formant_freq_point(out_file_name, formant, 0.0, v1_steady)
@@ -93,13 +93,13 @@ write_formant_timecourse <- function(out_file_name,
   write_formant_freq_point(out_file_name, formant, closure_begin, trans_target)
   
   #Amplitude of v1: set to some constant value between 0.0 and closure_begin
-  write_formant_amp_point(out_file_name, formant, 0.0, constant_amp) #TODO: I don't know what the amplitude value should be when not in closure
-  write_formant_amp_point(out_file_name, formant, closure_begin - 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
+  #write_formant_amp_point(out_file_name, formant, 0.0, constant_amp) #TODO: I don't know what the amplitude value should be when not in closure
+  #write_formant_amp_point(out_file_name, formant, closure_begin - 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
   
   
   
-  #Closure: set amplitude to 0 between closure_begin and closure_end unless it's f1; then, closure value is 150Hz
-  if (formant == 1){
+  #Closure: set amplitude to 0 between closure_begin and closure_end unless it's f1; then, closure value is 150Hz. What should amplitude be during the closure?
+  if (voicing & formant == 1){
     write_formant_freq_point(out_file_name, formant, closure_begin, 150)
     write_formant_freq_point(out_file_name, formant, closure_end - 0.01, 150) #Allow 10ms(0.01s) for transition from closure value to onset/offset value?
   } else{
@@ -117,8 +117,8 @@ write_formant_timecourse <- function(out_file_name,
   write_formant_freq_point(out_file_name, formant, v2_end, v2_steady)
   
   #Amplitude of v2: set to some constant value between closure_end and v2_end
-  write_formant_amp_point(out_file_name, formant, closure_end + 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
-  write_formant_amp_point(out_file_name, formant, v2_end, constant_amp)
+  #write_formant_amp_point(out_file_name, formant, closure_end + 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
+  #write_formant_amp_point(out_file_name, formant, v2_end, constant_amp)
   
 }
 
@@ -142,17 +142,20 @@ write_f0_timecourse <- function(out_file_name,
                                 closure_value = 90,
                                 voicing_end,
                                 closure_end,
-                                sound_end, constant_amp = 1 #What should av and the formant amplitudes be?
+                                sound_end, voicing = FALSE, constant_amp = 30 #What should av and the formant amplitudes be?
 ){
 
   #During first vowel
   write_f0_freq_point(out_file_name, 0.0, steady)
   write_f0_freq_point(out_file_name, v1_trans_start, steady)
-  write_f0_freq_point(out_file_name, closure_begin - 0.01, trans_target) #Allow 10ms(0.01s) for transition to closure; correspondence with John
+  write_f0_freq_point(out_file_name, closure_begin, trans_target) 
   
+  if(voicing){
   #Voicing during closure
-  write_f0_freq_point(out_file_name, closure_begin, closure_value)
+  write_f0_freq_point(out_file_name, closure_begin + 0.01, closure_value) #Allow 10ms(0.01s) for transition to closure for frequency too?
   write_f0_freq_point(out_file_name, voicing_end, closure_value)
+  }
+  
   
   #During second vowel
   write_f0_freq_point(out_file_name, closure_end, trans_target) #Allow 10ms(0.01s) for transition to closure; correspondence with John
