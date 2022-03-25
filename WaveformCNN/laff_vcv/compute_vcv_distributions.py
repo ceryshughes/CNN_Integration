@@ -1,6 +1,8 @@
 import textgrid
 import parselmouth
+import os
 
+debug = True
 
 class VcvToken:
     def __init__(self, stop, vowel1, vowel2):
@@ -34,9 +36,9 @@ class Stop:
 # Returns a VCV token object with vowel and stop fields populated
 def read_measurements(grid_file_name, wav_file_name):
     tg = textgrid.TextGrid.fromFile(grid_file_name)
-    voicing_tier = tg["voicing"]
-    closure_tier = tg["closure"]
-    vowel_tier = tg["vowel"]
+    voicing_tier = [tier for tier in tg.tiers if tier.name == "voicing"][0]
+    closure_tier = [tier for tier in tg.tiers if tier.name == "closure"][0]
+    vowel_tier = [tier for tier in tg.tiers if tier.name == "vowel"][0]
 
     #Get labels
     vowel_label = grid_file_name[0:2] #Vowel is first 2 characters in name
@@ -52,9 +54,9 @@ def read_measurements(grid_file_name, wav_file_name):
 
     #Compute stop values and construct stop
     voicing = voicing_tier[0]
-    voicing_dur = 0 if voicing.mark == "0" else voicing.max - voicing.min
+    voicing_dur = 0 if voicing.mark == "0" else voicing.maxTime - voicing.minTime
     closure = closure_tier[0]
-    closure_dur = closure.max - closure.min
+    closure_dur = closure.maxTime - closure.minTime
     stop = Stop(stop_label, voicing_dur, closure_dur)
 
     vowel1, vowel2 = read_vowel_measurements(wav_file_name, vowel_tier[0], vowel_tier[1], vowel_label, vowel_label)
@@ -74,22 +76,25 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
     vowel2_obj = Vowel(vowel2_label)
 
     # Steady-state measurement of vowel1: first 90% of the vowel
-    v1_steady_min = vowel1.min
-    v1_steady_max = vowel1.max * 0.9
-    v1_steady_midpoint = (v1_steady_max - v1_steady_max) / 2
+    v1_steady_min = vowel1.minTime
+    v1_steady_max = vowel1.maxTime * 0.9
+    v1_steady_midpoint = v1_steady_min + (v1_steady_max - v1_steady_max) / 2.0
     # Transition measurement of vowel1: last 10% of the vowel
     v1_transit_min = v1_steady_max
-    v1_transit_max = vowel1.max
+    v1_transit_max = vowel1.maxTime
     # I'm not sure if this is the best place to measure onset/offset...
-    v1_transit_midpoint = (v1_transit_max - v1_transit_min) / 2
+    v1_transit_midpoint = v1_transit_min + (v1_transit_max - v1_transit_min) / 2.0
     # Transition measurement of vowel2: first 10% of the vowel
-    v2_transit_min = vowel2.min
-    v2_transit_max = vowel2.max * 0.1
-    v2_transit_midpoint = (v2_transit_max - v2_transit_min) / 2
+    v2_transit_min = vowel2.minTime
+    v2_transit_max = vowel2.maxTime * 0.1
+    v2_transit_midpoint = v2_transit_min + (v2_transit_max - v2_transit_min) / 2.0
     # Steady-state measurement of vowel2: last 90% of the vowel
     v2_steady_min = v2_transit_max
-    v2_steady_max = vowel2.max
-    v2_steady_midpoint = (v2_steady_max - v2_steady_min) / 2
+    v2_steady_max = vowel2.maxTime
+    v2_steady_midpoint = v2_steady_min + (v2_steady_max - v2_steady_min) / 2.0
+
+    if debug:
+        print("\t", v1_steady_min, v1_steady_max, v1_steady_midpoint)
 
     # Read wavfile with Praat for formant data
     sound = parselmouth.Sound(wav_file_name)
@@ -124,6 +129,21 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
 
 
 
+
+if __name__ == "__main__":
+    path = "../../laff_vcv_tokens_with_stops"
+    files = os.listdir(path)
+    token_names = list(set([file[0:file.index(".")] for file in files]))
+    token_names.sort()
+
+    tokens = []
+    for token_name in token_names:
+        print("Working on", token_name)
+        filename = path + "/"+token_name
+        vcv = read_measurements(filename+".TextGrid", filename+".wav")
+        print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
+        print("\t", vcv.vowel1.measurement_dict)
+        tokens.append(vcv)
 
 
 
