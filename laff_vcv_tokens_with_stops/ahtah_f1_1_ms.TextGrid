@@ -11,9 +11,17 @@ item []:
         name = "voicing" 
         xmin = 0 
         xmax = 0.7306094612189225 
-        intervals: size = 1 
+        intervals: size = 3 
         intervals [1]:
             xmin = 0 
+            xmax = 0.16428011295676237 
+            text = "" 
+        intervals [2]:
+            xmin = 0.16428011295676237 
+            xmax = 0.16981757316749663 
+            text = "0" 
+        intervals [3]:
+            xmin = 0.16981757316749663 
             xmax = 0.7306094612189225 
             text = "" 
     item [2]:
@@ -21,9 +29,17 @@ item []:
         name = "closure" 
         xmin = 0 
         xmax = 0.7306094612189225 
-        intervals: size = 1 
+        intervals: size = 3 
         intervals [1]:
             xmin = 0 
+            xmax = 0.16428011295676237 
+            text = "" 
+        intervals [2]:
+            xmin = 0.16428011295676237 
+            xmax = 0.2780749202873519 
+            text = "c" 
+        intervals [3]:
+            xmin = 0.2780749202873519 
             xmax = 0.7306094612189225 
             text = "" 
     item [3]:
@@ -31,9 +47,25 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 0.7306094612189225 
-        intervals: size = 1 
+        intervals: size = 5 
         intervals [1]:
             xmin = 0 
+            xmax = 0.0906569387905422 
+            text = "" 
+        intervals [2]:
+            xmin = 0.0906569387905422 
+            xmax = 0.16428011295676237 
+            text = "v1" 
+        intervals [3]:
+            xmin = 0.16428011295676237 
+            xmax = 0.35126404386512744 
+            text = "" 
+        intervals [4]:
+            xmin = 0.35126404386512744 
+            xmax = 0.5139248544150363 
+            text = "v2" 
+        intervals [5]:
+            xmin = 0.5139248544150363 
             xmax = 0.7306094612189225 
             text = "" 
     item [4]:

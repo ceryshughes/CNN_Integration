@@ -19,7 +19,7 @@ item []:
         intervals [2]:
             xmin = 0.3177942659337068 
             xmax = 0.415286979947441 
-            text = "" 
+            text = "v" 
         intervals [3]:
             xmin = 0.415286979947441 
             xmax = 0.8893297786595573 
@@ -37,7 +37,7 @@ item []:
         intervals [2]:
             xmin = 0.3177942659337068 
             xmax = 0.42457200032970144 
-            text = "" 
+            text = "c" 
         intervals [3]:
             xmin = 0.42457200032970144 
             xmax = 0.8893297786595573 
@@ -55,7 +55,7 @@ item []:
         intervals [2]:
             xmin = 0.19908777891314952 
             xmax = 0.3177942659337068 
-            text = "" 
+            text = "v1" 
         intervals [3]:
             xmin = 0.3177942659337068 
             xmax = 0.439213763240189 
@@ -63,7 +63,7 @@ item []:
         intervals [4]:
             xmin = 0.439213763240189 
             xmax = 0.5796879751295895 
-            text = "" 
+            text = "v2" 
         intervals [5]:
             xmin = 0.5796879751295895 
             xmax = 0.8893297786595573 

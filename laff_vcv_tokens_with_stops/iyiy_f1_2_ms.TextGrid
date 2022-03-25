@@ -11,9 +11,17 @@ item []:
         name = "voicing" 
         xmin = 0 
         xmax = 0.7464814929629859 
-        intervals: size = 1 
+        intervals: size = 3 
         intervals [1]:
             xmin = 0 
+            xmax = 0.17230138642725704 
+            text = "" 
+        intervals [2]:
+            xmin = 0.17230138642725704 
+            xmax = 0.21120591748386594 
+            text = "v" 
+        intervals [3]:
+            xmin = 0.21120591748386594 
             xmax = 0.7464814929629859 
             text = "" 
     item [2]:
@@ -21,9 +29,17 @@ item []:
         name = "closure" 
         xmin = 0 
         xmax = 0.7464814929629859 
-        intervals: size = 1 
+        intervals: size = 3 
         intervals [1]:
             xmin = 0 
+            xmax = 0.17230138642725704 
+            text = "" 
+        intervals [2]:
+            xmin = 0.17230138642725704 
+            xmax = 0.23606798466797102 
+            text = "c" 
+        intervals [3]:
+            xmin = 0.23606798466797102 
             xmax = 0.7464814929629859 
             text = "" 
     item [3]:
@@ -31,9 +47,25 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 0.7464814929629859 
-        intervals: size = 1 
+        intervals: size = 5 
         intervals [1]:
             xmin = 0 
+            xmax = 0.0673282138721466 
+            text = "" 
+        intervals [2]:
+            xmin = 0.0673282138721466 
+            xmax = 0.17230138642725704 
+            text = "v1" 
+        intervals [3]:
+            xmin = 0.17230138642725704 
+            xmax = 0.2749725157245799 
+            text = "" 
+        intervals [4]:
+            xmin = 0.2749725157245799 
+            xmax = 0.5489205491112532 
+            text = "v2" 
+        intervals [5]:
+            xmin = 0.5489205491112532 
             xmax = 0.7464814929629859 
             text = "" 
     item [4]:
@@ -41,4 +73,10 @@ item []:
         name = "notes" 
         xmin = 0 
         xmax = 0.7464814929629859 
-        points: size = 0 
+        points: size = 2 
+        points [1]:
+            number = 0.2620810734809699 
+            mark = "what is this region?" 
+        points [2]:
+            number = 0.2749725157245799 
+            mark = "" 
