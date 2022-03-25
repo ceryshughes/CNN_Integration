@@ -1,0 +1,76 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 0.7940975881951764 
+tiers? <exists> 
+size = 4 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "voicing" 
+        xmin = 0 
+        xmax = 0.7940975881951764 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.20855419270225667 
+            text = "" 
+        intervals [2]:
+            xmin = 0.20855419270225667 
+            xmax = 0.22491176685120204 
+            text = "0" 
+        intervals [3]:
+            xmin = 0.22491176685120204 
+            xmax = 0.7940975881951764 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "closure" 
+        xmin = 0 
+        xmax = 0.7940975881951764 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.20855419270225667 
+            text = "" 
+        intervals [2]:
+            xmin = 0.20855419270225667 
+            xmax = 0.32205572761330625 
+            text = "c" 
+        intervals [3]:
+            xmin = 0.32205572761330625 
+            xmax = 0.7940975881951764 
+            text = "" 
+    item [3]:
+        class = "IntervalTier" 
+        name = "vowel" 
+        xmin = 0 
+        xmax = 0.7940975881951764 
+        intervals: size = 5 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.07737544804642549 
+            text = "" 
+        intervals [2]:
+            xmin = 0.07737544804642549 
+            xmax = 0.20855419270225667 
+            text = "v1" 
+        intervals [3]:
+            xmin = 0.20855419270225667 
+            xmax = 0.41052015923515367 
+            text = "" 
+        intervals [4]:
+            xmin = 0.41052015923515367 
+            xmax = 0.5859019708416597 
+            text = "v2" 
+        intervals [5]:
+            xmin = 0.5859019708416597 
+            xmax = 0.7940975881951764 
+            text = "" 
+    item [4]:
+        class = "TextTier" 
+        name = "notes" 
+        xmin = 0 
+        xmax = 0.7940975881951764 
+        points: size = 0 

@@ -1,0 +1,76 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 0.8893297786595573 
+tiers? <exists> 
+size = 4 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "voicing" 
+        xmin = 0 
+        xmax = 0.8893297786595573 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.3177942659337068 
+            text = "" 
+        intervals [2]:
+            xmin = 0.3177942659337068 
+            xmax = 0.415286979947441 
+            text = "" 
+        intervals [3]:
+            xmin = 0.415286979947441 
+            xmax = 0.8893297786595573 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "closure" 
+        xmin = 0 
+        xmax = 0.8893297786595573 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.3177942659337068 
+            text = "" 
+        intervals [2]:
+            xmin = 0.3177942659337068 
+            xmax = 0.42457200032970144 
+            text = "" 
+        intervals [3]:
+            xmin = 0.42457200032970144 
+            xmax = 0.8893297786595573 
+            text = "" 
+    item [3]:
+        class = "IntervalTier" 
+        name = "vowel" 
+        xmin = 0 
+        xmax = 0.8893297786595573 
+        intervals: size = 5 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.19908777891314952 
+            text = "" 
+        intervals [2]:
+            xmin = 0.19908777891314952 
+            xmax = 0.3177942659337068 
+            text = "" 
+        intervals [3]:
+            xmin = 0.3177942659337068 
+            xmax = 0.439213763240189 
+            text = "" 
+        intervals [4]:
+            xmin = 0.439213763240189 
+            xmax = 0.5796879751295895 
+            text = "" 
+        intervals [5]:
+            xmin = 0.5796879751295895 
+            xmax = 0.8893297786595573 
+            text = "" 
+    item [4]:
+        class = "TextTier" 
+        name = "notes" 
+        xmin = 0 
+        xmax = 0.8893297786595573 
+        points: size = 0 

@@ -1,0 +1,76 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 0.651249302498605 
+tiers? <exists> 
+size = 4 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "voicing" 
+        xmin = 0 
+        xmax = 0.651249302498605 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.168660880030866 
+            text = "" 
+        intervals [2]:
+            xmin = 0.168660880030866 
+            xmax = 0.18013604238212302 
+            text = "0" 
+        intervals [3]:
+            xmin = 0.18013604238212302 
+            xmax = 0.651249302498605 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "closure" 
+        xmin = 0 
+        xmax = 0.651249302498605 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.168660880030866 
+            text = "" 
+        intervals [2]:
+            xmin = 0.168660880030866 
+            xmax = 0.30542093378080487 
+            text = "c" 
+        intervals [3]:
+            xmin = 0.30542093378080487 
+            xmax = 0.651249302498605 
+            text = "" 
+    item [3]:
+        class = "IntervalTier" 
+        name = "vowel" 
+        xmin = 0 
+        xmax = 0.651249302498605 
+        intervals: size = 5 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.0453002848230035 
+            text = "" 
+        intervals [2]:
+            xmin = 0.0453002848230035 
+            xmax = 0.168660880030866 
+            text = "v1" 
+        intervals [3]:
+            xmin = 0.168660880030866 
+            xmax = 0.30542093378080487 
+            text = "" 
+        intervals [4]:
+            xmin = 0.30542093378080487 
+            xmax = 0.5244357725750883 
+            text = "v2" 
+        intervals [5]:
+            xmin = 0.5244357725750883 
+            xmax = 0.651249302498605 
+            text = "" 
+    item [4]:
+        class = "TextTier" 
+        name = "notes" 
+        xmin = 0 
+        xmax = 0.651249302498605 
+        points: size = 0 
