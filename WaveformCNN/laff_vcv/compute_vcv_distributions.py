@@ -89,7 +89,11 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
 
     # Steady-state measurement of vowel1: first 99% of the vowel - I don't have a good reason for picking this number; suggestions?
     v1_steady_min = vowel1.minTime
-    v1_steady_max = vowel1.maxTime * 0.99
+    v1_steady_max = vowel1.maxTime * 0.99 #TODO: reduce this split
+    #put vowel into many slices and get values for each slice - look for standard deviation to see if there's something weird
+    #getting measurement near closure- calculate slope and interpolate endpoint from earlier measurements?
+    #grab last few windows and check variance
+    #if checking by hand, do a variable sample
     v1_steady_midpoint = v1_steady_min + (v1_steady_max - v1_steady_max) / 2.0
     # Transition measurement of vowel1: last 10% of the vowel
     v1_transit_min = v1_steady_max
@@ -129,6 +133,7 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
 
     #Take f0 measurements of steady state vs transition regions (worried f0 won't be well defined if I go too near the  closure)
     #TODO: adjust parameters for different speakers
+    #check for cleanness in f0 contours
     pitch = parselmouth.praat.call(sound, "To Pitch", 0.0, 75, 500)  # create a praat pitch object
     vowel1_obj.measurement_dict[0]["steady"] = parselmouth.praat.call(pitch, "Get mean", v1_steady_min, v1_steady_max, "Hertz")  # get mean pitch
     vowel2_obj.measurement_dict[0]["steady"] = parselmouth.praat.call(pitch, "Get mean", v1_steady_min, v1_steady_max, "Hertz")
@@ -148,7 +153,7 @@ def plot_closure_data(tokens, nbins, label = "", speaker = "", savename=""):
     plt.hist([token.stop.closure_dur for token in tokens], bins=nbins)
     if savename != "":
         plt.savefig(savename)
-    #plt.show()
+    plt.show()
 
 
 #tokens: list of VCV
@@ -161,7 +166,7 @@ def plot_voicing_data(tokens, nbins, label = "", speaker = "", savename=""):
     plt.hist([token.stop.voicing_dur for token in tokens], bins=nbins)
     if savename != "":
         plt.savefig(savename)
-    #plt.show()
+    plt.show()
 
 
 #TODO: plot closure/voicing duration ratio
@@ -174,6 +179,7 @@ def plot_voicing_data(tokens, nbins, label = "", speaker = "", savename=""):
 #label: specific vowel quality (string) for title
 #speaker: speaker identity (string) for title
 def plot_vowel_measure(vowel_order, measure, location, tokens, nbins, label ="", speaker="", savename=""):
+    #plt.figure()
     title_measure = 'F'+str(measure) if measure > 0 else "f0"
     title_location = "away from closure" if location == "steady" else "near closure"
     title_vowel = "First vowel" if vowel_order == 1 else "Second vowel"
@@ -192,9 +198,10 @@ def plot_vowel_measure(vowel_order, measure, location, tokens, nbins, label ="",
     values = [value for value in values if not math.isnan(value)]
 
     plt.hist(values, bins=nbins)
+    plt.show()
     if savename != "":
         plt.savefig(savename)
-    #plt.show()
+
 
 #Helper function: creates plots for f0 and each formant
 #condition: function that takes a token and returns a boolean; only the tokens that result in True
@@ -204,7 +211,7 @@ def plot_vowel_measures(tokens,condition, label):
     # Plot steady f0
     plot_vowel_measure(1, 0, "steady", [token for token in tokens if condition(token)],
                        nbins, label=label, savename=plot_dir + label + "_v1_steady_f0.png")
-    plot_vowel_measure(2, 0, "steady", [token for token in tokens if token.vowel1.label == vowel],
+    plot_vowel_measure(2, 0, "steady", [token for token in tokens if condition(token)],
                        nbins, label=label, savename=plot_dir + label + "_v2_steady_f0.png")
 
     # Plot transition f0
@@ -277,14 +284,15 @@ if __name__ == "__main__":
     plot_closure_data([token for token in tokens if token.stop.label in voiced_stops], nbins, label="Voiced", savename=plot_dir+"VoicelessVoicedDur")
 
     #Vowel measurements by vowel
-    for vowel in vowels:
-        plot_vowel_measures(tokens, lambda token: token.vowel1.label == vowel, label=vowel)
+    if debug:
+        for vowel in vowels:
+            plot_vowel_measures(tokens, lambda token: token.vowel1.label == vowel, label=vowel)
 
-
-    #Vowel measurements by vowel x stop TODO: glottal stops
-    for vowel in vowels:
-        for stop in voiceless_stops + voiced_stops:
-            plot_vowel_measures(tokens, lambda token: token.vowel1.label == vowel and token.stop.label == stop, label = vowel+"_"+stop)
+    if debug:
+        #Vowel measurements by vowel x stop TODO: glottal stops
+        for vowel in vowels:
+            for stop in voiceless_stops + voiced_stops:
+                plot_vowel_measures(tokens, lambda token: token.vowel1.label == vowel and token.stop.label == stop, label = vowel+"_"+stop)
 
     #Vowel measurements by stop
     for stop in voiceless_stops+voiced_stops:

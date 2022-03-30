@@ -109,15 +109,14 @@ def softmax_crossent_loss(target_y, predicted_y):
 #     model_vars = model.trainable_variables
 #     for epoch in range(num_epochs):
 #         train_op = optimizer.minimize(lambda: softmax_crossent_loss(target_y=y, predicted_y=model(x)),var_list=model_vars)
-#     #Todo: clip weights
+#
 
 #Instead of the above training code, use the built-in compile and specify the options there
 #Expose with a function: create_model
 def create_model():
     model = WaveCNN()
-    #Learning rate and beta1 values from Donahue
-    model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=2e-4, beta1=0.5), loss = softmax_crossent_loss)
-    #Todo: clip weights
+    #Learning rate, beta1, and clipping values from Donahue
+    model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=2e-4, beta1=0.5, clipvalue=0.01), loss = softmax_crossent_loss)
     return model
 
 
