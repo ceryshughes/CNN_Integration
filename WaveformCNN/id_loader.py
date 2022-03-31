@@ -205,7 +205,8 @@ def id_decode_extract_and_batch(
     _decode_audio_shaped,
     num_parallel_calls=decode_parallel_calls)
   dataset = dataset.flat_map(_slice_dataset_wrapper)
-  dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,)))
+  #dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,)))
+  dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,1)))
   dataset = tf.data.Dataset.zip((fp_dataset, dataset))
 
   if debug:

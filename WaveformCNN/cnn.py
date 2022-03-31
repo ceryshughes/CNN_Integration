@@ -11,7 +11,7 @@ class WaveCNN(tf.keras.Model):
     #Kernel len: size of kernel window for convolution
     #dim: Number of output filters in the first layer of convolution (will be scaled up/down in other layers)
     #num_classes: length of output vectors
-    def __init__(self, kernel_len=25, dim=64,use_batchnorm=False, name="cnn", num_classes=3):
+    def __init__(self, kernel_len=25, dim=64,use_batchnorm=False, name="cnn", num_classes=2):
         #TODO: batch normalization training vs inference?
         #TODO: slice_len?
         super(WaveCNN, self).__init__(name=name)
@@ -20,6 +20,7 @@ class WaveCNN(tf.keras.Model):
         self.use_batchnorm = use_batchnorm
         if self.use_batchnorm:
             self.batchnorm = tf.keras.layers.BatchNormalization()
+
 
         #The tensorflow v1 code from Donahue doesn't specify the kernel initializer; in v1, the default is
         #None and in v2, the default is Glorot Uniform(not sure what Glorot is). v1 doesn't specify what
@@ -64,12 +65,12 @@ class WaveCNN(tf.keras.Model):
 
         # Combine features into output later
         self.dense = tf.keras.layers.Dense(num_classes)
-        #self.activ_out = tf.keras.layers.Softmax()
+
+        self.activ_out = tf.keras.layers.Softmax()
         #Donahue *says* this is connected to a single logit but doesn't use an activation function,
         #and the tensorflow default is linear. It appears he puts the interpretation as probability
-        #into training, not the architecture definition. I'm doing the same (see softmax_crossent_loss function)
-        # but use softmax; I suppose this allows flexibility because you could train with some other interpretation
-        # of the output layer reusing the rest of the network.
+        #into training, not the architecture definition. To simplify getting all of the shapes to be compatible,
+        # I'm adding the softmax in the architecture instead.
 
 
 
@@ -89,14 +90,15 @@ class WaveCNN(tf.keras.Model):
         output = self.flatten(output)
         output = self.dense(output) #Donahue doesn't use batchnorm for the output layer
         #for the discriminator?
+        output = self.activ_out(output)
         return output
 
 #Loss function computation for training
 #target_y: the gold output
 #predicted_y: the output predicted by the model
 #Returns the softmax crossentropy loss
-def softmax_crossent_loss(target_y, predicted_y):
-    tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=target_y, labels=predicted_y))
+# def softmax_crossent_loss(target_y, predicted_y):
+#     return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=target_y, labels=predicted_y))
 
 # # Updates model's weights with an Adam optimizer with a beta1 of 0.5
 # # model: a Keras/tensorflow model
@@ -113,10 +115,10 @@ def softmax_crossent_loss(target_y, predicted_y):
 
 #Instead of the above training code, use the built-in compile and specify the options there
 #Expose with a function: create_model
-def create_model():
-    model = WaveCNN()
+def create_model(num_classes):
+    model = WaveCNN(num_classes=num_classes)
     #Learning rate, beta1, and clipping values from Donahue
-    model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=2e-4, beta1=0.5, clipvalue=0.01), loss = softmax_crossent_loss)
+    model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5, clipvalue=0.01), loss = 'categorical_crossentropy')
     return model
 
 

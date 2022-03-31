@@ -2,7 +2,7 @@
 # -inputs are .wav files in a folder with ID names
 # -gold labels are in a csv file with a FileID column and a Category column; each row represents a file
 
-debug = False
+debug = True
 
 import cnn
 import id_loader #From Donahue's WaveGan
@@ -15,21 +15,21 @@ import tensorflow as tf
 # categories: set of string with no duplicates and cardinality >= 2
 # Returns a numerical encoding of the categories; specifically,
 # if len(categories) is 2,
-#   a string : integer dictionary, where the integer is unique for each key and is 0 or 1 and the string is a category name
+#   a string : float dictionary, where the float is unique for each key and is 0 or 1 and the string is a category name
 #       from categories
 #
 # a string : list dictionary, where the list is a unique one-hot vector and the string is a category name from categories
-# Also returns a reverse of this dictionary where the keys are either ints or tuples of ints(one-hot) and the values
+# Also returns a reverse of this dictionary where the keys are either floats or tuples of floats(one-hot) and the values
 # are the category strings
 def category_encoder(categories):
     if len(categories) == 2:
-        return {categories[0]:0, categories[1]:1}, {0:categories[0], 1:categories[1]}
+        return {categories[0]:0.0, categories[1]:1.0}, {0.0:categories[0], 1.0:categories[1]}
     else:
         str_to_onehot = {}
         onehot_to_str = {}
         for index, category in enumerate(categories):
-            str_to_onehot[category] = [0] * len(categories)
-            str_to_onehot[category][index] = 1
+            str_to_onehot[category] = [0.0] * len(categories)
+            str_to_onehot[category][index] = 1.0
             onehot_to_str[tuple(str_to_onehot[category])] = category
         return str_to_onehot, onehot_to_str
 
@@ -57,32 +57,44 @@ def get_golds(gold_file_name):
 
 
 
-def get_data(wav_file_dir, info_csv):
+def get_data(wav_file_dir, info_csv, batch_size=64 if not debug else 2,
+             decode_fs = 16000,
+             fast_wav = False,
+             shuffle = True if not debug else False,
+             prefetch_gpu_num = 0):
     """ Generates objects from data files
     Args:
         -wav_file_dir: string name of directory where the wav files are stored(must contain only .wav files)
         -info_csv: a csv file with two columns, FileID and Category, that lists the category label for each file in wav_file_dir
+
+        Processing args:
+        batch size: size of batches in output
+        decode_fs: sampling rate for audio in samples per second
+        shuffle: True to shuffle the dataset order; False not to shuffle the dataset order (retains category information either way)
+        prefetch_size: how much data to prefetch (?)
+        prefetch_gpu_num: from Donahue, If nonnegative, prefetch examples to this GPU (Tensorflow device num)
     Returns: - a batched dataset of audio vectors (Tensorflow Dataset of int.32 vector with 65536 samples)
              - a corresponding batched dataset of the vectors' file IDs (Tensorflow Dataset of string vectors)
              - a corresponding list of the vectors' categories in either binary or one-hot representation (Tensorflow Dataset of either int.32 or vector of int.32)
           - a dictionary of possible categories and their mappings to 0 or 1 if binary or one-hot lists if multiclass
     """
 
-    #Cerys: this is ok as long as there are no directories in sample_wavs
+
+    #Cerys: this is ok as long as there are no directories or non-wav-files in sample_wavs
     all_sample_filenames = [wav_file_dir+fn for fn in os.listdir(wav_file_dir)]
 
     #This returns a batched Tensorflow Dataset?
     sample_gold_batches = id_loader.id_decode_extract_and_batch(all_sample_filenames,
-        batch_size=args.train_batch_size,
-        decode_fs=args.data_sample_rate,
+        batch_size=batch_size,
+        decode_fs=decode_fs,
         decode_num_channels=1,
-        decode_fast_wav=args.data_fast_wav,
+        decode_fast_wav=fast_wav,
         decode_parallel_calls=4,
         repeat=False, #Originally true in Donahue; I set it to False because repeat means create a structure where you "repeat the data indefinitely"
-        shuffle=False if debug else True, #Todo: switch to True
+        shuffle=shuffle,
         shuffle_buffer_size=4096,
-        prefetch_size=args.train_batch_size * 4,
-        prefetch_gpu_num=args.data_prefetch_gpu_num)
+        prefetch_size=batch_size * 4,
+        prefetch_gpu_num=prefetch_gpu_num)
 
 
     #Separate the audio data from the filenames
@@ -93,11 +105,18 @@ def get_data(wav_file_dir, info_csv):
     #Change the filenames to string categories
     file_category_maps = get_golds(info_csv)
     batch_categories = batch_filenames.map(lambda name: tensor_categories(name, file_category_maps))
+    if debug:
+        for element in batch_categories:
+            print("Category",element)
     category_to_encoding, encoding_to_category = category_encoder(list(set(file_category_maps.values())))
     batch_encoded_categories = batch_categories.map(lambda category: tensor_encodings(category, category_to_encoding))
+    if debug:
+        for element in batch_encoded_categories:
+            print("Encoding",element)
+    batch_encoded_categories = batch_encoded_categories.map(lambda x: tf.cast(x,dtype=tf.float32)) #Can't be integers, has to be floats for Keras
 
 
-    return batch_audio_vectors, batch_filenames, batch_encoded_categories, category_to_encoding
+    return batch_audio_vectors, batch_filenames, batch_encoded_categories, category_to_encoding, encoding_to_category
 
 #Tensorflow strings can't be used like normal Python strings; if you want to call a string function on them,
 # you have to wrap operations in a
@@ -128,7 +147,7 @@ def tensor_categories(tensor, file_category_maps):
                              [tensor], tf.string)
 def tensor_encodings(tensor, category_encodings):
     return tf.numpy_function(lambda string: helper_categories(string, category_encodings),
-                             [tensor], tf.int32)
+                             [tensor], tf.double)
 
 
 
@@ -242,8 +261,8 @@ def arguments():
 
 
 if __name__ == "__main__":
-    args = arguments().parse_args()
-    audio, filenames, gold_labels, category_encodings = get_data("sample_wavs", "sample_file_info.csv")
+    args = arguments().parse_args() #todo: clean this up; I don't use command line arguments here anymore
+    audio, filenames, gold_labels, category_encodings, encoding_categories= get_data("sample_wavs", "sample_file_info.csv")
     #print(audio)
     print("Gold labels")
     for element in audio:
