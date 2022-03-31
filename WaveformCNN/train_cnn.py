@@ -35,8 +35,8 @@ if __name__ == "__main__":
     print("Training the CNN categorizer")
     cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs)
 
-print("Saving model to ", model_save_path)
-cnn_model.save(model_save_path)
+    print("Saving model to ", model_save_path)
+    cnn_model.save(model_save_path)
 
 
 

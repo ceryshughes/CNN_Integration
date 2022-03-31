@@ -5,13 +5,14 @@
 #I pass it through a softmax function so that more than 2 categories could be learned.
 #Also, unlike Donahue, I do not do weight clipping (to be added later).
 import tensorflow as tf
+debug = True
 
 #Architecture of a CNN from the discriminator model of Donahue's WaveGan.
 class WaveCNN(tf.keras.Model):
     #Kernel len: size of kernel window for convolution
     #dim: Number of output filters in the first layer of convolution (will be scaled up/down in other layers)
     #num_classes: length of output vectors
-    def __init__(self, kernel_len=25, dim=64,use_batchnorm=False, name="cnn", num_classes=2):
+    def __init__(self, kernel_len=25, dim=64,use_batchnorm=True, name="cnn", num_classes=2):
         #TODO: batch normalization training vs inference?
         #TODO: slice_len?
         super(WaveCNN, self).__init__(name=name)
@@ -81,10 +82,20 @@ class WaveCNN(tf.keras.Model):
             batchnorm = lambda x: x #If no batchnorm, just return the input
 
         #Put input through the network
+        if debug:
+            print(inputs.shape)
         output = self.activ_0(batchnorm(self.downconv_0(inputs)))
+        if debug:
+            print(output.shape)
         output = self.activ_1(batchnorm(self.downconv_1(output)))
+        if debug:
+            print(output.shape)
         output = self.activ_2(batchnorm(self.downconv_2(output)))
+        if debug:
+            print(output.shape)
         output = self.activ_3(batchnorm(self.downconv_3(output)))
+        if debug:
+            print(output.shape)
         output = self.activ_4(batchnorm(self.downconv_4(output)))
         #output = self.activ_5(batchnorm(self.downconv_5(output)))
         output = self.flatten(output)

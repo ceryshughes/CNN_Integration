@@ -15,11 +15,11 @@ import tensorflow as tf
 # categories: set of string with no duplicates and cardinality >= 2
 # Returns a numerical encoding of the categories; specifically,
 # if len(categories) is 2,
-#   a string : float dictionary, where the float is unique for each key and is 0 or 1 and the string is a category name
+#   a string : double dictionary, where the float is unique for each key and is 0.0 or 1.0 and the string is a category name
 #       from categories
 #
 # a string : list dictionary, where the list is a unique one-hot vector and the string is a category name from categories
-# Also returns a reverse of this dictionary where the keys are either floats or tuples of floats(one-hot) and the values
+# Also returns a reverse of this dictionary where the keys are either doubles or tuples of doubles(one-hot) and the values
 # are the category strings
 def category_encoder(categories):
     if len(categories) == 2:

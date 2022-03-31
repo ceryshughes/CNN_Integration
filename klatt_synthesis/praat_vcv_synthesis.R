@@ -83,7 +83,12 @@ write_formant_timecourse <- function(out_file_name,
                                      v2_end, voicing = FALSE 
 ){
   
-  #constant_amp <- 10
+  #Bandwidth
+  lineOut <- paste("Add oral formant bandwidth point...", formant, 0, 60, sep = " ") 
+  cat(lineOut, file=out_file_name, sep="\n", append=T)
+  
+  
+  constant_amp <- 60
   
   #Steady state portion of v1
   write_formant_freq_point(out_file_name, formant, 0.0, v1_steady)
@@ -93,8 +98,8 @@ write_formant_timecourse <- function(out_file_name,
   write_formant_freq_point(out_file_name, formant, closure_begin, trans_target)
   
   #Amplitude of v1: set to some constant value between 0.0 and closure_begin
-  #write_formant_amp_point(out_file_name, formant, 0.0, constant_amp) #TODO: I don't know what the amplitude value should be when not in closure
-  #write_formant_amp_point(out_file_name, formant, closure_begin - 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
+  write_formant_amp_point(out_file_name, formant, 0.0, constant_amp) #TODO: I don't know what the amplitude value should be when not in closure
+  write_formant_amp_point(out_file_name, formant, closure_begin - 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
   
   
   
@@ -117,8 +122,8 @@ write_formant_timecourse <- function(out_file_name,
   write_formant_freq_point(out_file_name, formant, v2_end, v2_steady)
   
   #Amplitude of v2: set to some constant value between closure_end and v2_end
-  #write_formant_amp_point(out_file_name, formant, closure_end + 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
-  #write_formant_amp_point(out_file_name, formant, v2_end, constant_amp)
+  write_formant_amp_point(out_file_name, formant, closure_end + 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
+  write_formant_amp_point(out_file_name, formant, v2_end, constant_amp)
   
 }
 
@@ -144,6 +149,9 @@ write_f0_timecourse <- function(out_file_name,
                                 closure_end,
                                 sound_end, voicing = FALSE, constant_amp = 30 #What should av and the formant amplitudes be?
 ){
+  
+
+  
 
   #During first vowel
   write_f0_freq_point(out_file_name, 0.0, steady)
@@ -266,8 +274,8 @@ p = read_parameters_excel(param_file_name, sheet_name)
 num_formants <- 5 #3 for xclosure voicing experiments
   
 
-output_file_name <- "fileOut.KlattGrid"
-fileName <- "sound"
+base_name = "fileOut"
+output_file_name <- paste(base_name, ".KlattGrid", sep="")
 dataPath <- "klatt"
 
 #Replace file if it already exists
@@ -277,8 +285,8 @@ if (file.exists(output_file_name)) {
 
 #Opening lines
 lineOut <- paste("Create KlattGrid...", output_file_name, "0", p$max_time, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
-cat(lineOut, file="fileOut.KlattGrid", sep="\n", append=T)
-cat("\n", file="fileOut.KlattGrid", append = T)
+cat(lineOut, file=output_file_name, sep="\n", append=T)
+cat("\n", file=output_file_name, append = T)
 
 
 
@@ -315,9 +323,9 @@ write_f0_timecourse(output_file_name, p$f0_steady, p$f0_trans, p$f0_v1_trans_tim
 lineOut <- paste("To Sound (special)... 0 0 44100 yes yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
 cat(lineOut, file=output_file_name, sep="\n", append=T)
 
-lineOut <- paste("select Sound", output_file_name, sep=" ")
+lineOut <- paste("select Sound", base_name, sep=" ")
 cat(lineOut, file=output_file_name, sep="\n", append=T)
-savePath <- paste(dataPath,"/",fileName,".wav", sep="")
+savePath <- paste(dataPath,"/",base_name,".wav", sep="")
 lineOut <- paste("Save as WAV file...", savePath, sep=" ")
 cat(lineOut, file=output_file_name, sep="\n", append=T)
 cat("\n", file=output_file_name, append = T)
