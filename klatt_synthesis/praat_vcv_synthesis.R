@@ -4,6 +4,7 @@
 
 
 library(tidyverse)
+library(tibble)
 library(knitr)
 library(ggpubr)
 
@@ -46,7 +47,7 @@ write_f0_freq_point <- function(out_file_name, time, frequency) {
 #amp: amplitude value(is this in dB?) for the formant at this timepoint
 write_f0_amp_point <- function(out_file_name, time, amp){
   lineOut <- paste("Add voicing amplitude point...", time, amp, sep = " ") 
-  cat(lineOut, file=output_file_name, sep="\n", append=T)
+  cat(lineOut, file=out_file_name, sep="\n", append=T)
 }
 
 #Important time regions:
@@ -217,116 +218,131 @@ read_parameters_excel <- function(filename, sheetname){
   F5_v1_trans_time <- closure_begin - values$F1TransitionDur
   F5_v2_trans_time <- closure_end + values$OtherFsTransitionDur
   
-  #Return the computed synthesis parameters in a named list
-  list(closure_begin = closure_begin,
-       closure_end = closure_end,
-       max_time = max_time,
-       closure_voicing_end = closure_voicing_end,
-       
-       f0_v1_trans_time = f0_v1_trans_time,
-       f0_v2_trans_time = f0_v2_trans_time,
-       f0_steady = values$f0steady,
-       f0_trans = values$f0offset,
-       f0_closure_value = values$f0Closure,
-       
-       F1_v1_trans_time = F1_v1_trans_time,
-       F1_v2_trans_time = F1_v2_trans_time,
-       F1_steady = values$F1steady,
-       F1_trans = values$F1offset,
-       F1_closure_value = values$F1Closure,
-       
-       F2_v1_trans_time =  F2_v1_trans_time,
-       F2_v2_trans_time = F2_v2_trans_time,
-       F2_steady = values$F2steady,
-       F2_trans = values$F2offset,
-       
-       F3_v1_trans_time =  F3_v1_trans_time,
-       F3_v2_trans_time = F3_v2_trans_time,
-       F3_steady = values$F3steady,
-       F3_trans = values$F3offset,
-       
-       F4_v1_trans_time = F4_v1_trans_time,
-       F4_v2_trans_time = F4_v2_trans_time,
-       F4_steady = values$F4steady,
-       F4_trans = values$F4offset,
-       
-       F5_v1_trans_time = F5_v1_trans_time,
-       F5_v2_trans_time = F5_v2_trans_time,
-       F5_steady = values$F5steady,
-       F5_trans = values$F5offset,
-       
-       closure_value = 1  #How much amplitude should be on voicing during the closure? I don't know what this should be
-       
-       )
+  
+  #Put the computed values into the tibble and rename some columns
+  values <- values  %>% add_column(closure_begin=closure_begin)
+  values <- values  %>% add_column(closure_end=closure_end)
+  values <- values  %>% add_column(max_time=max_time)
+  values <- values  %>% add_column(closure_voicing_end=closure_voicing_end)
+  
+  values <- values  %>% add_column(f0_v1_trans_time=f0_v1_trans_time)
+  values <- values  %>% add_column(f0_v2_trans_time=f0_v2_trans_time)
+  values <- rename(values,f0_trans = f0offset)
+  values <- rename(values, f0_closure_value=f0Closure)
+  values <- rename(values, f0_steady=f0steady)
+  
+  values <- values  %>% add_column(F1_v1_trans_time=F1_v1_trans_time)
+  values <- values  %>% add_column(F1_v2_trans_time=F1_v2_trans_time)
+  values <- rename(values,F1_steady = F1steady)
+  values <- rename(values,F1_trans = F1offset)
+  values <- rename(values, F1_closure_value = F1Closure)
+  
+  values <- values  %>% add_column(F2_v1_trans_time=F2_v1_trans_time)
+  values <- values  %>% add_column(F2_v2_trans_time=F2_v2_trans_time)
+  values <- rename(values,F2_steady = F2steady)
+  values <- rename(values,F2_trans = F2offset)
+  
+  values <- values  %>% add_column(F3_v1_trans_time=F3_v1_trans_time)
+  values <- values  %>% add_column(F3_v2_trans_time=F3_v2_trans_time)
+  values <- rename(values,F3_steady = F3steady)
+  values <- rename(values,F3_trans = F3offset)
+  
+  values <- values  %>% add_column(F4_v1_trans_time=F4_v1_trans_time)
+  values <- values  %>% add_column(F4_v2_trans_time=F4_v2_trans_time)
+  values <- rename(values,F4_steady = F4steady)
+  values <- rename(values,F4_trans = F4offset)
+  
+  values <- values  %>% add_column(F5_v1_trans_time=F5_v1_trans_time)
+  values <- values  %>% add_column(F5_v2_trans_time=F5_v2_trans_time)
+  values <- rename(values,F5_steady = F5steady)
+  values <- rename(values,F5_trans = F5offset)
+  
+  values <- values %>% add_column(closure_value = 10)
+ 
+  #Return the tibble
+  values
+  
+}
+
+
+#Function to output a KlattGrid file and wav file
+#basename: basename of the KlattGrid that produces a wav file
+#datapath: path to where the KlattGrid(and its wav file, after it's been run) will be saved
+#num_formants: number of formants to output
+#p: synthesis parameters for a single sound
+output_klattgrid <- function(basename, datapath, num_formants, p){
+    output_file_name <- paste(basename, ".KlattGrid", sep="")
+    
+    
+    #Replace file if it already exists
+    if (file.exists(output_file_name)) {
+      file.remove(output_file_name)
+    }
+    
+    #Opening lines
+    lineOut <- paste("Create KlattGrid...", output_file_name, "0", p$max_time, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
+    cat(lineOut, file=output_file_name, sep="\n", append=T)
+    cat("\n", file=output_file_name, append = T)
+    
+    
+    
+    formant_steadies <- c(p$F1_steady, p$F2_steady, p$F3_steady, p$F4_steady, p$F5_steady)
+    formant_trans <- c(p$F1_trans, p$F2_trans, p$F3_trans, p$F4_trans, p$F5_trans)
+    formant_v1_trans_times <- c(p$F1_v1_trans_time, p$F2_v1_trans_time, p$F3_v1_trans_time, p$F4_v1_trans_time, p$F5_v1_trans_time)
+    formant_v2_trans_times <- c(p$F1_v2_trans_time, p$F2_v2_trans_time, p$F3_v2_trans_time, p$F4_v2_trans_time, p$F5_v2_trans_time)
+    
+    
+    #Write point commands for the formants
+    for (formant in 1:num_formants){
+      write_formant_timecourse(output_file_name, formant, 
+                               #For my current purposes I don't need both of these arguments but I think it's more flexible to have them
+                               formant_steadies[formant], formant_steadies[formant], 
+                               formant_trans[formant], 
+                               formant_v1_trans_times[formant], 
+                               p$closure_begin, p$closure_end,
+                               formant_v2_trans_times[formant], 
+                               p$max_time)
+      cat("\n\n", file=output_file_name, append=T)
+    }
+    
+    #Write point commands for f0
+    write_f0_timecourse(output_file_name, p$f0_steady, p$f0_trans, p$f0_v1_trans_time, p$f0_v2_trans_time, 
+                        p$closure_begin,
+                        p$f0_closure_value, 
+                        p$closure_voicing_end,
+                        p$closure_end,
+                        p$max_time
+    )
+    
+    
+    #Wrap up output commands
+    lineOut <- paste("To Sound (special)... 0 0 44100 yes yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
+    cat(lineOut, file=output_file_name, sep="\n", append=T)
+    
+    lineOut <- paste("select Sound", basename, sep=" ")
+    cat(lineOut, file=output_file_name, sep="\n", append=T)
+    savePath <- paste(dataPath,"/",basename,".wav", sep="")
+    lineOut <- paste("Save as WAV file...", savePath, sep=" ")
+    cat(lineOut, file=output_file_name, sep="\n", append=T)
+    cat("\n", file=output_file_name, append = T)
   
 }
 
 
 
-
-#I don't know what the best practice is for R; in Python/Java/C/Ruby/etc, we have a "main" function 
-#where we put our code to execute as opposed to our function definitions. In R scripts I've seen, people just run individual lines/blocks
-#straight out of the script/in the console?
 
 param_file_name <- "sample_klatt_params.xlsx"
 sheet_name <- "F1ClosureDur"
-p = read_parameters_excel(param_file_name, sheet_name)
+p <- read_parameters_excel(param_file_name, sheet_name)
 num_formants <- 5 #3 for xclosure voicing experiments
   
 
-base_name = "fileOut"
-output_file_name <- paste(base_name, ".KlattGrid", sep="")
+base_name <- "fileOut"
 dataPath <- "klatt"
 
-#Replace file if it already exists
-if (file.exists(output_file_name)) {
-  file.remove(output_file_name)
+for (condition_index in 1:nrow(p)){
+  synth_params = p %>% slice(condition_index)
+  output_klattgrid(synth_params$Name,dataPath,num_formants,synth_params)
 }
 
-#Opening lines
-lineOut <- paste("Create KlattGrid...", output_file_name, "0", p$max_time, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
-cat(lineOut, file=output_file_name, sep="\n", append=T)
-cat("\n", file=output_file_name, append = T)
-
-
-
-formant_steadies <- c(p$F1_steady, p$F2_steady, p$F3_steady, p$F4_steady, p$F5_steady)
-formant_trans <- c(p$F1_trans, p$F2_trans, p$F3_trans, p$F4_trans, p$F5_trans)
-formant_v1_trans_times <- c(p$F1_v1_trans_time, p$F2_v1_trans_time, p$F3_v1_trans_time, p$F4_v1_trans_time, p$F5_v1_trans_time)
-formant_v2_trans_times <- c(p$F1_v2_trans_time, p$F2_v2_trans_time, p$F3_v2_trans_time, p$F4_v2_trans_time, p$F5_v2_trans_time)
-
-
-#Write point commands for the formants
-for (formant in 1:num_formants){
-  write_formant_timecourse(output_file_name, formant, 
-                           #For my current purposes I don't need both of these arguments but I think it's more flexible to have them
-                           formant_steadies[formant], formant_steadies[formant], 
-                           formant_trans[formant], 
-                           formant_v1_trans_times[formant], 
-                           p$closure_begin, p$closure_end,
-                           formant_v2_trans_times[formant], 
-                           p$max_time)
-  cat("\n\n", file=output_file_name, append=T)
-}
-
-#Write point commands for f0
-write_f0_timecourse(output_file_name, p$f0_steady, p$f0_trans, p$f0_v1_trans_time, p$f0_v2_trans_time, 
-                    p$closure_begin,
-                    p$f0_closure_value, 
-                    p$closure_voicing_end,
-                    p$closure_end,
-                    p$max_time
-                    )
-
-
-#Wrap up output commands
-lineOut <- paste("To Sound (special)... 0 0 44100 yes yes no no no no \"Powers in tiers\" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes")
-cat(lineOut, file=output_file_name, sep="\n", append=T)
-
-lineOut <- paste("select Sound", base_name, sep=" ")
-cat(lineOut, file=output_file_name, sep="\n", append=T)
-savePath <- paste(dataPath,"/",base_name,".wav", sep="")
-lineOut <- paste("Save as WAV file...", savePath, sep=" ")
-cat(lineOut, file=output_file_name, sep="\n", append=T)
-cat("\n", file=output_file_name, append = T)
 
