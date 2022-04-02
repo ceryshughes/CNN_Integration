@@ -19,8 +19,7 @@ class WaveCNN(tf.keras.Model):
 
 
         self.use_batchnorm = use_batchnorm
-        if self.use_batchnorm:
-            self.batchnorm = tf.keras.layers.BatchNormalization()
+
 
 
         #The tensorflow v1 code from Donahue doesn't specify the kernel initializer; in v1, the default is
@@ -30,26 +29,36 @@ class WaveCNN(tf.keras.Model):
         # Layer 0
         # [16384, 1] -> [4096, 64]
         self.downconv_0 = tf.keras.layers.Conv1D(dim, kernel_len,4,padding="same")
+        if self.use_batchnorm:
+             self.batchnorm_0 = tf.keras.layers.BatchNormalization()
         self.activ_0 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
         # Layer 1
         # [4096, 64] -> [1024, 128]
         self.downconv_1 = tf.keras.layers.Conv1D(dim*2, kernel_len,4, padding="same")
+        if self.use_batchnorm:
+             self.batchnorm_1 = tf.keras.layers.BatchNormalization()
         self.activ_1 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
         # Layer 2
         # [1024, 128] -> [256, 256]
         self.downconv_2 = tf.keras.layers.Conv1D(dim*4,kernel_len,4, padding="same")
+        if self.use_batchnorm:
+             self.batchnorm_2 = tf.keras.layers.BatchNormalization()
         self.activ_2 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
         # Layer 3
         # [256, 256] -> [64, 512]
         self.downconv_3 = tf.keras.layers.Conv1D(dim * 8, kernel_len, 4, padding="same")
+        if self.use_batchnorm:
+             self.batchnorm_3 = tf.keras.layers.BatchNormalization()
         self.activ_3 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
         # Layer 4
         # [64, 512] -> [16, 1024]
         self.downconv_4 = tf.keras.layers.Conv1D(dim * 16, kernel_len, 4, padding="same")
+        if self.use_batchnorm:
+             self.batchnorm_4 = tf.keras.layers.BatchNormalization()
         self.activ_4 = tf.keras.layers.LeakyReLU(alpha=0.2)
 
         #slice_len in original Donahue code? He has 2 extra layers depending on what slice_len is...?
@@ -73,30 +82,44 @@ class WaveCNN(tf.keras.Model):
         #into training, not the architecture definition. To simplify getting all of the shapes to be compatible,
         # I'm adding the softmax in the architecture instead.
 
-
+    #layer: which number layer batch normalization to use
+    #Returns the input batch normalized with self.batchnorm_layer
+    #Requires self.batchnorm_layer is defined
+    def _batchnorm_helper(self, input, layer):
+        assert layer in [0,1,2,3,4]
+        if layer == 0:
+            return self.batchnorm_0(input)
+        elif layer == 1:
+            return self.batchnorm_1(input)
+        elif layer == 2:
+            return self.batchnorm_2(input)
+        elif layer == 3:
+            return self.batchnorm_3(input)
+        elif layer == 4:
+            return self.batchnorm_4(input)
 
     def call(self, inputs):
         if self.use_batchnorm:
-            batchnorm = self.batchnorm #If batchnorm, use a normalizing function
+            batchnorm = lambda x, layer: self._batchnorm_helper(x, layer) #If batchnorm, use a normalizing function
         else:
-            batchnorm = lambda x: x #If no batchnorm, just return the input
+            batchnorm = lambda x, layer: x #If no batchnorm, just return the input
 
         #Put input through the network
         if debug:
             print(inputs.shape)
-        output = self.activ_0(batchnorm(self.downconv_0(inputs)))
+        output = self.activ_0(batchnorm(self.downconv_0(inputs),0))
         if debug:
             print(output.shape)
-        output = self.activ_1(batchnorm(self.downconv_1(output)))
+        output = self.activ_1(batchnorm(self.downconv_1(output),1))
         if debug:
             print(output.shape)
-        output = self.activ_2(batchnorm(self.downconv_2(output)))
+        output = self.activ_2(batchnorm(self.downconv_2(output),2))
         if debug:
             print(output.shape)
-        output = self.activ_3(batchnorm(self.downconv_3(output)))
+        output = self.activ_3(batchnorm(self.downconv_3(output),3))
         if debug:
             print(output.shape)
-        output = self.activ_4(batchnorm(self.downconv_4(output)))
+        output = self.activ_4(batchnorm(self.downconv_4(output),4))
         #output = self.activ_5(batchnorm(self.downconv_5(output)))
         output = self.flatten(output)
         output = self.dense(output) #Donahue doesn't use batchnorm for the output layer
