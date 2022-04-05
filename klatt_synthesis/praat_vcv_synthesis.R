@@ -59,6 +59,84 @@ write_f0_amp_point <- function(out_file_name, time, amp){
 #Steady state
 
 
+
+write_formant_amplitude_timecourse <- function (out_file_name, 
+                                               formant,
+                                               v1_end,
+                                               closure_begin, 
+                                               closure_end,
+                                               v2_begin,
+                                               max_time,
+                                               voicing=FALSE,
+                                               voicing_end=0,
+                                               silence_begin=0){
+  formant_amp <- 60
+  
+  #Formant amplitude in v1
+  write_formant_amp_point(out_file_name, formant, 0, formant_amp)
+  
+  if(voicing & formant == 1){
+    #F1 holding during the closure
+    write_formant_amp_point(out_file_name, formant, voicing_end, formant_amp)
+    #F1 transition to silence for silent part of the closure
+    write_formant_amp_point(out_file_name, formant, silence_begin, 0)
+    
+  }else{
+    #Formant amplitude is positive up until the end of v1, then transitions to 0 for the closure
+    write_formant_amp_point(out_file_name, formant, v1_end, formant_amp)
+    write_formant_amp_point(out_file_name, formant, closure_begin, 0)
+    write_formant_amp_point(out_file_name, formant, closure_end, 0)
+  }
+  
+  #Formants come back for v2
+  write_formant_amp_point(out_file_name, formant, v2_begin, formant_amp)
+  write_formant_amp_point(out_file_name, formant, max_time, formant_amp)
+}
+
+#TODO: write formant freq timecourse
+write_formant_freq_timecourse <- function(out_file_name, 
+                              formant,
+                              steady_freq,
+                              offset_freq,
+                              v1_trans_time,
+                              v1_end,
+                              closure_begin, 
+                              closure_end,
+                              v2_begin,
+                              v2_trans_time,
+                              max_time,
+                              voicing=FALSE,
+                              voicing_end=0,
+                              closure_freq = 0){
+  
+  #Steady frequency in beginning of vowel
+  write_formant_freq_point(out_file_name, formant, 0, steady_freq)
+  
+  #Interpolate to offset frequency
+  write_formant_freq_point(out_file_name, formant, v1_trans_time, steady_freq)
+  write_formant_freq_point(out_file_name, formant, v1_end, offset_freq)
+  
+  #If F1 and closure voicing, switch to closure voicing frequency value
+  if (voicing & formant == 1){
+    write_formant_freq_point(out_file_name, formant, closure_begin, closure_freq)
+    write_formant_freq_point(out_file_name, formant, voicing_end, closure_freq)
+    print(paste(v1_end,closure_begin, voicing_end, sep=" "))
+    #Switch back to offset frequency before the closure ends, during silence
+    write_formant_freq_point(out_file_name, formant, closure_end, offset_freq)
+  }
+  
+  #Transition from offset frequency to steady frequency at the beginning of v2
+  write_formant_freq_point(out_file_name, formant, v2_begin, offset_freq)
+  write_formant_freq_point(out_file_name, formant, v2_trans_time, steady_freq)
+  
+  #Steady freq to the end of the sound (maybe this point isn't necessary)
+  write_formant_freq_point(out_file_name, formant, max_time, steady_freq)
+  
+}
+
+
+
+
 #Writes point commands to output file for the timecourse of a VCV token (where C is a stop) for a single formant 
 #(let the first vowel in VCV be called v1 and the second v2). Time/v1 starts at 0.0s
 #
@@ -74,57 +152,57 @@ write_f0_amp_point <- function(out_file_name, time, amp){
 #Except during the closure, formant amplitude is:
 write_formant_timecourse <- function(out_file_name, 
                                      formant,
+                                     bandwidth,
                                      v1_steady,
                                      v2_steady,
                                      trans_target,
                                      v1_trans_begin,
+                                     v1_end,
                                      closure_begin,
                                      closure_end,
+                                     v2_begin,
                                      v2_steady_begin,
-                                     v2_end, voicing = FALSE 
+                                     v2_end, 
+                                     voicing_end = 0,
+                                     silence_begin = 0,
+                                     closure_freq = 0,
+                                     voicing = FALSE  
 ){
   
   #Bandwidth
-  lineOut <- paste("Add oral formant bandwidth point...", formant, 0, 60, sep = " ") 
+  lineOut <- paste("Add oral formant bandwidth point...", formant, 0, bandwidth, sep = " ") 
   cat(lineOut, file=out_file_name, sep="\n", append=T)
   
   
-  constant_amp <- 60
+  #Write amplitude timecourse
+  write_formant_amplitude_timecourse(out_file_name, 
+                                     formant,
+                                     v1_end,
+                                     closure_begin, 
+                                     closure_end,
+                                     v2_begin=v2_begin,
+                                     max_time=v2_end,
+                                     voicing=voicing,
+                                     voicing_end=voicing_end,
+                                     silence_begin=silence_begin)
   
-  #Steady state portion of v1
-  write_formant_freq_point(out_file_name, formant, 0.0, v1_steady)
-  write_formant_freq_point(out_file_name, formant, v1_trans_begin, v1_steady)
-  
-  #Transition portion of v1: linear interpolation
-  write_formant_freq_point(out_file_name, formant, closure_begin, trans_target)
-  
-  #Amplitude of v1: set to some constant value between 0.0 and closure_begin
-  write_formant_amp_point(out_file_name, formant, 0.0, constant_amp) #TODO: I don't know what the amplitude value should be when not in closure
-  write_formant_amp_point(out_file_name, formant, closure_begin - 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
-  
-  
-  
-  #Closure: set amplitude to 0 between closure_begin and closure_end unless it's f1; then, closure value is 150Hz. What should amplitude be during the closure?
-  if (voicing & formant == 1){
-    write_formant_freq_point(out_file_name, formant, closure_begin, 150)
-    write_formant_freq_point(out_file_name, formant, closure_end - 0.01, 150) #Allow 10ms(0.01s) for transition from closure value to onset/offset value?
-  } else{
-    write_formant_amp_point(out_file_name, formant, closure_begin, 0 ) 
-    write_formant_amp_point(out_file_name, formant, closure_end, 0)
-  }
+  #Write frequency timecourse
+  write_formant_freq_timecourse(out_file_name, 
+                                formant,
+                                steady_freq = v1_steady,
+                                offset_freq = trans_target,
+                                v1_trans_time = v1_trans_begin,
+                                v1_end,
+                                closure_begin, 
+                                closure_end,
+                                v2_begin,
+                                v2_trans_time = v2_steady_begin,
+                                max_time = v2_end,
+                                voicing=voicing,
+                                voicing_end=voicing_end,
+                                closure_freq = closure_freq)
   
   
-  
-  #Transition portion of v2 to steady portion of v2: linear interpolation
-  write_formant_freq_point(out_file_name, formant, closure_end, trans_target) 
-  write_formant_freq_point(out_file_name, formant, v2_steady_begin, v2_steady)
-  
-  #Steady state portion of v2
-  write_formant_freq_point(out_file_name, formant, v2_end, v2_steady)
-  
-  #Amplitude of v2: set to some constant value between closure_end and v2_end
-  write_formant_amp_point(out_file_name, formant, closure_end + 0.01, constant_amp) #Allow 10ms(0.01s) for transition to closure amplitude; correspondence with John
-  write_formant_amp_point(out_file_name, formant, v2_end, constant_amp)
   
 }
 
@@ -139,138 +217,228 @@ write_formant_timecourse <- function(out_file_name,
 #voicing_end: the timepoint(seconds) during the closure when voicing ends
 #closure_end: the timepoint(seconds) when the closure ends and the second V begins
 #sound_end: the timepoint(seconds) when the second V(and the sound as a whole) ends
-write_f0_timecourse <- function(out_file_name, 
-                                steady,
-                                trans_target,
-                                v1_trans_start,
-                                v2_trans_stop,
-                                closure_begin,
-                                closure_value = 90,
-                                voicing_end,
-                                closure_end,
-                                sound_end, voicing = FALSE, constant_amp = 30 #What should av and the formant amplitudes be?
-){
+write_f0_timecourse <- function(out_file_name, times, freqs, voicing){
   
+  write_f0_freq_timecourse(out_file_name, times, freqs, voicing)
+  write_f0_amp_timecourse(out_file_name, times, voicing)
+}
 
-  
+write_f0_freq_timecourse <- function(out_file_name, times, freqs, voicing){
+  if (voicing){
+    #Vowel: steady f0, then transition to end
+    write_f0_freq_point(out_file_name, 0, freqs$f0steady)
+    write_f0_freq_point(out_file_name, times$f0_v1_trans_time, freqs$f0steady)
+    write_f0_freq_point(out_file_name, times$v1_end, freqs$f0offset)
+    
+    #Transition to f0 value for closure voicing
+    write_f0_freq_point(out_file_name, times$closure_begin,freqs$f0Closure)
+    write_f0_freq_point(out_file_name, times$voicing_end, freqs$f0Closure)
+    
+    #Onset f0 for vowel 2, then transition to steady frequency
+    write_f0_freq_point(out_file_name, times$closure_end, freqs$f0offset)
+    write_f0_freq_point(out_file_name, times$v2_begin, freqs$f0offset)
+    write_f0_freq_point(out_file_name, times$f0_v2_trans_time, freqs$f0steady)
+    write_f0_freq_point(out_file_name, times$v2_end, freqs$f0steady)
+  }else{
+    
+    #Vowel: steady f0, then transition to end
+    write_f0_freq_point(out_file_name, 0, freqs$f0steady)
+    write_f0_freq_point(out_file_name, times$f0_v1_trans_time, freqs$f0steady)
+    write_f0_freq_point(out_file_name, times$v1_end, freqs$f0offset)
+    
+    #Onset f0 for vowel 2, then transition to steady frequency
+    write_f0_freq_point(out_file_name, times$v2_begin, freqs$f0offset)
+    write_f0_freq_point(out_file_name, times$f0_v2_trans_time, freqs$f0steady)
+    write_f0_freq_point(out_file_name, times$v2_end, freqs$f0steady)
+  }
+}
 
-  #During first vowel
-  write_f0_freq_point(out_file_name, 0.0, steady)
-  write_f0_freq_point(out_file_name, v1_trans_start, steady)
-  write_f0_freq_point(out_file_name, closure_begin, trans_target) 
-  
+
+
+write_f0_amp_timecourse <- function(out_file_name,timepoint_params, voicing){
+  f0_amp <- 60
   if(voicing){
-  #Voicing during closure
-  write_f0_freq_point(out_file_name, closure_begin + 0.01, closure_value) #Allow 10ms(0.01s) for transition to closure for frequency too?
-  write_f0_freq_point(out_file_name, voicing_end, closure_value)
+    #Amplitude during vowel through closure voicing
+    write_f0_amp_point(out_file_name, 0, f0_amp)
+    write_f0_amp_point(out_file_name, timepoint_params$voicing_end, f0_amp)
+    
+    #Turn to 0 for rest of the closure
+    write_f0_amp_point(out_file_name, timepoint_params$silence_begin, 0)
+    write_f0_amp_point(out_file_name, timepoint_params$closure_end, 0)
+    
+    #Turn back up for second vowel
+    write_f0_amp_point(out_file_name, timepoint_params$v2_begin, f0_amp)
+    write_f0_amp_point(out_file_name, timepoint_params$v2_end, f0_amp)
+    
+  }
+  else{
+    #Amplitude during vowel
+    write_f0_amp_point(out_file_name, 0, f0_amp)
+    write_f0_amp_point(out_file_name, timepoint_params$v1_end, f0_amp)
+    
+    #Turn to 0 for closure
+    write_f0_amp_point(out_file_name, timepoint_params$closure_begin, 0)
+    write_f0_amp_point(out_file_name, timepoint_params$closure_end, 0)
+    
+    #Turn back up for second vowel
+    write_f0_amp_point(out_file_name, timepoint_params$v2_begin, f0_amp)
+    write_f0_amp_point(out_file_name, timepoint_params$v2_end, f0_amp)
+    
+  }
+}
+
+
+#Returns a list of named times when transitions should occur
+get_waypoints <- function(values){
+  
+  #Small transition times because Klatt linear interpolation - can't change instantaneously
+  higher_formants_fade <- 0.01
+  closure_voicing_fade <- 0.01
+  voicing_return_time <- 0.01
+  
+  #Waypoints around the closure a bit different for if there's closure voicing or not
+  if (values$ClosureVoicingDur > 0){
+    voicing <- TRUE
+    v1_end <- values$VowelDur
+    closure_begin <- values$VowelDur + higher_formants_fade
+    voicing_end <- closure_begin + values$ClosureVoicingDur
+    silence_begin <- voicing_end + closure_voicing_fade
+    closure_end <- silence_begin + (values$ClosureDur - values$ClosureVoicingDur)
+    v2_begin <- closure_end + voicing_return_time
+    v2_end <- v2_begin + values$VowelDur
+  }else{
+    voicing <- FALSE
+    v1_end <- values$VowelDur
+    closure_begin <-values$VowelDur + closure_voicing_fade
+    closure_end <- closure_begin + values$ClosureDur
+    v2_begin <- closure_end + voicing_return_time
+    v2_end <- v2_begin + values$VowelDur
   }
   
+  #Formant and f0 transition points within-vowel are the same for both  
+  f0_v1_trans_time <- values$VowelDur - values$f0TransitionDur
+  f0_v2_trans_time <- v2_begin + values$f0TransitionDur
   
-  #During second vowel
-  write_f0_freq_point(out_file_name, closure_end, trans_target) #Allow 10ms(0.01s) for transition to closure; correspondence with John
-  write_f0_freq_point(out_file_name, v2_trans_stop, steady)
-  write_f0_freq_point(out_file_name, sound_end, steady)
+  F1_v1_trans_time <- values$VowelDur - values$F1TransitionDur
+  F1_v2_trans_time <- v2_begin + values$F1TransitionDur
   
-  #Amplitude up until when voicing ends
-  write_f0_amp_point(out_file_name, 0.0, constant_amp)
-  write_f0_amp_point(out_file_name, voicing_end - 0.01, constant_amp) #No closure voicing => voicing_end = closure_begin
+  F2_v1_trans_time <- values$VowelDur - values$OtherFsTransitionDur
+  F2_v2_trans_time <- v2_begin + values$OtherFsTransitionDur
+  
+  F3_v1_trans_time <- values$VowelDur - values$OtherFsTransitionDur
+  F3_v2_trans_time <- v2_begin + values$OtherFsTransitionDur
+  
+  F4_v1_trans_time <- values$VowelDur - values$OtherFsTransitionDur
+  F4_v2_trans_time <- v2_begin + values$OtherFsTransitionDur
+  
+  F5_v1_trans_time <- values$VowelDur - values$OtherFsTransitionDur
+  F5_v2_trans_time <- v2_begin + values$OtherFsTransitionDur
+  
+  if (voicing){
+    #Pack the values into a named list
+    waypoints <- list(
+      voicing = voicing,
+      v1_end = v1_end,
+      closure_begin = closure_begin,
+      voicing_end = voicing_end,
+      silence_begin = silence_begin,
+      closure_end = closure_end,
+      v2_begin = v2_begin,
+      v2_end = v2_end
+    )
+  }else{
+      waypoints <- list(
+        voicing = voicing,
+        v1_end = v1_end,
+        closure_begin = closure_begin,
+        closure_end = closure_end,
+        v2_begin = v2_begin,
+        v2_end = v2_end
+      )
+  }
+  
+  vowel_transition_times <- list(
+    f0_v1_trans_time = values$VowelDur - values$f0TransitionDur,
+    f0_v2_trans_time = v2_begin + values$f0TransitionDur,
+    
+    F1_v1_trans_time = values$VowelDur - values$F1TransitionDur,
+    F1_v2_trans_time = v2_begin + values$F1TransitionDur,
+    
+    F2_v1_trans_time = values$VowelDur - values$OtherFsTransitionDur,
+    F2_v2_trans_time = v2_begin + values$OtherFsTransitionDur,
+    
+    F3_v1_trans_time = values$VowelDur - values$OtherFsTransitionDur,
+    F3_v2_trans_time = v2_begin + values$OtherFsTransitionDur,
+    
+    F4_v1_trans_time = values$VowelDur - values$OtherFsTransitionDur,
+    F4_v2_trans_time = v2_begin + values$OtherFsTransitionDur,
+    
+    F5_v1_trans_time = values$VowelDur - values$OtherFsTransitionDur,
+    F5_v2_trans_time = v2_begin + values$OtherFsTransitionDur
+    
+  )
+  
+  waypoints <- append(waypoints, vowel_transition_times)
+  
+  #Return the changing timepoints
+  waypoints
+  
+    
   
   
-  #Turn voicing to amplitude 0 for end of voicing/closure
-  write_f0_amp_point(out_file_name, voicing_end, 0)
-  write_f0_amp_point(out_file_name, closure_end, 0)
   
-  #Turn voicing back up for beginning of second vowel to the end
-  write_f0_amp_point(out_file_name, closure_end + 0.01, constant_amp)  #Allow 10ms(0.01s) for transition to closure; correspondence with John
-  write_f0_amp_point(out_file_name, sound_end, constant_amp)
+}
 
+
+#num_formants: number of formants specified(3 or 5)
+#values: synthesis parameter values
+#Returns a named list with the frequency values:
+#steady, offset for each formant number and for f0
+#values for f0 and F1 during closure voicing
+get_frequency_parameters <- function(values, num_formants){
+  freqs <- list(
+    f0Closure = values$f0Closure,
+    F1Closure = values$F1Closure,
+    
+    f0steady = values$f0steady,
+    f0offset = values$f0offset,
+    
+    F1steady = values$F1steady,
+    F1offset = values$F1offset,
+    
+    F2steady = values$F2steady,
+    F2offset = values$F2offset,
+    
+    F3steady = values$F3steady,
+    F3offset = values$F3offset
+  )
   
+  if (num_formants == 5){
+    higher_forms <- list(
+      F4steady = values$F4steady,
+      F4offset = values$F4offset,
+      
+      F5steady = values$F5steady,
+      F5offset = values$F5offset
+    )
+    freqs <- append(freqs, higher_forms)
+  }
+  
+  #Return frequency values
+  freqs
   
 }
 
-#filename: the name of an excel file in this directory with the appropriate parameters
-#sheetname: name of the sheet with the data in the excel file
-#outputs a list with the named important frequency and time values for the points in the KlattGrid
-#time values should be in seconds, frequency values should be in Hz
-read_parameters_excel <- function(filename, sheetname){
-  values <- read_excel(filename, sheet = sheetname)
-  
-  closure_begin <- values$VowelDur
-  closure_end <- closure_begin + values$ClosureDur
-  max_time <- closure_end + values$VowelDur
-  closure_voicing_end <- closure_begin + values$ClosureVoicingDur
-  
-  f0_v1_trans_time <- closure_begin - values$f0TransitionDur
-  f0_v2_trans_time <- closure_end + values$f0TransitionDur
-  
-  F1_v1_trans_time <- closure_begin - values$F1TransitionDur
-  F1_v2_trans_time <- closure_end + values$F1TransitionDur
-  
-  F2_v1_trans_time <- closure_begin - values$OtherFsTransitionDur
-  F2_v2_trans_time <- closure_end + values$OtherFsTransitionDur
-  
-  F3_v1_trans_time <- closure_begin - values$F1TransitionDur
-  F3_v2_trans_time <- closure_end + values$OtherFsTransitionDur
-  
-  F4_v1_trans_time <- closure_begin - values$F1TransitionDur
-  F4_v2_trans_time <- closure_end + values$OtherFsTransitionDur
-  
-  F5_v1_trans_time <- closure_begin - values$F1TransitionDur
-  F5_v2_trans_time <- closure_end + values$OtherFsTransitionDur
-  
-  
-  #Put the computed values into the tibble and rename some columns
-  values <- values  %>% add_column(closure_begin=closure_begin)
-  values <- values  %>% add_column(closure_end=closure_end)
-  values <- values  %>% add_column(max_time=max_time)
-  values <- values  %>% add_column(closure_voicing_end=closure_voicing_end)
-  
-  values <- values  %>% add_column(f0_v1_trans_time=f0_v1_trans_time)
-  values <- values  %>% add_column(f0_v2_trans_time=f0_v2_trans_time)
-  values <- rename(values,f0_trans = f0offset)
-  values <- rename(values, f0_closure_value=f0Closure)
-  values <- rename(values, f0_steady=f0steady)
-  
-  values <- values  %>% add_column(F1_v1_trans_time=F1_v1_trans_time)
-  values <- values  %>% add_column(F1_v2_trans_time=F1_v2_trans_time)
-  values <- rename(values,F1_steady = F1steady)
-  values <- rename(values,F1_trans = F1offset)
-  values <- rename(values, F1_closure_value = F1Closure)
-  
-  values <- values  %>% add_column(F2_v1_trans_time=F2_v1_trans_time)
-  values <- values  %>% add_column(F2_v2_trans_time=F2_v2_trans_time)
-  values <- rename(values,F2_steady = F2steady)
-  values <- rename(values,F2_trans = F2offset)
-  
-  values <- values  %>% add_column(F3_v1_trans_time=F3_v1_trans_time)
-  values <- values  %>% add_column(F3_v2_trans_time=F3_v2_trans_time)
-  values <- rename(values,F3_steady = F3steady)
-  values <- rename(values,F3_trans = F3offset)
-  
-  values <- values  %>% add_column(F4_v1_trans_time=F4_v1_trans_time)
-  values <- values  %>% add_column(F4_v2_trans_time=F4_v2_trans_time)
-  values <- rename(values,F4_steady = F4steady)
-  values <- rename(values,F4_trans = F4offset)
-  
-  values <- values  %>% add_column(F5_v1_trans_time=F5_v1_trans_time)
-  values <- values  %>% add_column(F5_v2_trans_time=F5_v2_trans_time)
-  values <- rename(values,F5_steady = F5steady)
-  values <- rename(values,F5_trans = F5offset)
-  
-  values <- values %>% add_column(closure_value = 10)
- 
-  #Return the tibble
-  values
-  
-}
+
 
 
 #Function to output a KlattGrid file and wav file
 #basename: basename of the KlattGrid that produces a wav file
 #datapath: path to where the KlattGrid(and its wav file, after it's been run) will be saved
 #num_formants: number of formants to output
-#p: synthesis parameters for a single sound
-output_klattgrid <- function(basename, datapath, num_formants, p){
+#waypoints: synthesis timepoint parameters for a single sound
+#freqs: synthesis frequency parameters for a single sound
+output_klattgrid <- function(basename, datapath, num_formants, waypoints, freqs, voicing){
     output_file_name <- paste(basename, ".KlattGrid", sep="")
     
     
@@ -280,39 +448,59 @@ output_klattgrid <- function(basename, datapath, num_formants, p){
     }
     
     #Opening lines
-    lineOut <- paste("Create KlattGrid...", output_file_name, "0", p$max_time, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
+    lineOut <- paste("Create KlattGrid...", output_file_name, "0", waypoints$v2_end, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
     cat(lineOut, file=output_file_name, sep="\n", append=T)
     cat("\n", file=output_file_name, append = T)
     
     
-    
-    formant_steadies <- c(p$F1_steady, p$F2_steady, p$F3_steady, p$F4_steady, p$F5_steady)
-    formant_trans <- c(p$F1_trans, p$F2_trans, p$F3_trans, p$F4_trans, p$F5_trans)
-    formant_v1_trans_times <- c(p$F1_v1_trans_time, p$F2_v1_trans_time, p$F3_v1_trans_time, p$F4_v1_trans_time, p$F5_v1_trans_time)
-    formant_v2_trans_times <- c(p$F1_v2_trans_time, p$F2_v2_trans_time, p$F3_v2_trans_time, p$F4_v2_trans_time, p$F5_v2_trans_time)
-    
+    #Values for each formant to iterate over
+    bandwidths = c(60,90,120,250,250)
+    if (num_formants == 5){
+      formant_steadies <- c(freqs$F1steady, freqs$F2steady, freqs$F3steady, freqs$F4steady, freqs$F5steady)
+      formant_offsets <- c(freqs$F1offset, freqs$F2offset, freqs$F3offset, freqs$F4offset, freqs$F5offset)
+      formant_v1_trans_times <- c(waypoints$F1_v1_trans_time, waypoints$F2_v1_trans_time, waypoints$F3_v1_trans_time, waypoints$F4_v1_trans_time, waypoints$F5_v1_trans_time)
+      formant_v2_trans_times <- c(waypoints$F1_v2_trans_time, waypoints$F2_v2_trans_time, waypoints$F3_v2_trans_time, waypoints$F4_v2_trans_time, waypoints$F5_v2_trans_time)
+    }else{
+      formant_steadies <- c(freqs$F1steady, freqs$F2steady, freqs$F3steady)
+      formant_offsets <- c(freqs$F1offset, freqs$F2offset, freqs$F3offset)
+      formant_v1_trans_times <- c(waypoints$F1_v1_trans_time, waypoints$F2_v1_trans_time, waypoints$F3_v1_trans_time)
+      formant_v2_trans_times <- c(waypoints$F1_v2_trans_time, waypoints$F2_v2_trans_time, waypoints$F3_v2_trans_time)
+    }
     
     #Write point commands for the formants
     for (formant in 1:num_formants){
-      write_formant_timecourse(output_file_name, formant, 
-                               #For my current purposes I don't need both of these arguments but I think it's more flexible to have them
-                               formant_steadies[formant], formant_steadies[formant], 
-                               formant_trans[formant], 
-                               formant_v1_trans_times[formant], 
-                               p$closure_begin, p$closure_end,
-                               formant_v2_trans_times[formant], 
-                               p$max_time)
+      voicing_end <- 0
+      silence_begin <- 0
+      f1_closure_freq <- 0
+      if(voicing){ #These values are defined for tokens with closure voicing but not those without
+        voicing_end <- waypoints$voicing_end
+        silence_begin <- waypoints$silence_begin
+        f1_closure_freq <- freqs$F1Closure
+      }
+     
+      
+      write_formant_timecourse(output_file_name, 
+                               formant,
+                               bandwidths[formant],
+                               v1_steady=formant_steadies[formant],
+                               v2_steady=formant_steadies[formant],
+                               trans_target=formant_offsets[formant],
+                               v1_trans_begin=formant_v1_trans_times[formant],
+                               v1_end = waypoints$v1_end,
+                               closure_begin = waypoints$closure_begin,
+                               closure_end = waypoints$closure_end,
+                               v2_begin = waypoints$v2_begin,
+                               v2_steady_begin = formant_v2_trans_times[formant],
+                               v2_end = waypoints$v2_end, 
+                               voicing_end = voicing_end,
+                               silence_begin = silence_begin,
+                               closure_freq = f1_closure_freq,
+                               voicing = voicing)  
       cat("\n\n", file=output_file_name, append=T)
     }
     
     #Write point commands for f0
-    write_f0_timecourse(output_file_name, p$f0_steady, p$f0_trans, p$f0_v1_trans_time, p$f0_v2_trans_time, 
-                        p$closure_begin,
-                        p$f0_closure_value, 
-                        p$closure_voicing_end,
-                        p$closure_end,
-                        p$max_time
-    )
+    write_f0_timecourse(output_file_name, waypoints, freqs, voicing)
     
     
     #Wrap up output commands
@@ -333,16 +521,26 @@ output_klattgrid <- function(basename, datapath, num_formants, p){
 
 param_file_name <- "sample_klatt_params.xlsx"
 sheet_name <- "F1ClosureDur"
-p <- read_parameters_excel(param_file_name, sheet_name)
-num_formants <- 5 #3 for xclosure voicing experiments
+p <- read_excel(param_file_name, sheet = sheet_name)
   
 
 base_name <- "fileOut"
 dataPath <- "klatt"
 
 for (condition_index in 1:nrow(p)){
-  synth_params = p %>% slice(condition_index)
-  output_klattgrid(synth_params$Name,dataPath,num_formants,synth_params)
+  synth_params <- p %>% slice(condition_index)
+  timepoints <- get_waypoints(synth_params)
+  if(timepoints$voicing){
+    num_formants = 3
+  }else{
+    num_formants = 5
+  }
+  freqs <- get_frequency_parameters(synth_params, num_formants)
+  if(timepoints$voicing){
+  print(paste(synth_params$Name,timepoints$v1_end, timepoints$closure_begin, sep = ' '))
+  }
+  
+  output_klattgrid(synth_params$Name,dataPath,num_formants, timepoints, freqs, timepoints$voicing)
 }
 
 

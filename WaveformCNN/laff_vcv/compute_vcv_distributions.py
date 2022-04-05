@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import math
 
-debug = False
+debug = True
 
 class VcvToken:
     def __init__(self, speaker, stop, vowel1, vowel2):
@@ -192,15 +192,16 @@ def plot_vowel_measure(vowel_order, measure, location, tokens, nbins, label ="",
     nan_check = [token for token in tokens if math.isnan(token.vowel1.measurement_dict[measure][location])]
     if debug and len(nan_check) > 0:
         nan_token = nan_check[0]
-        print("F", measure, "Nan value for this speaker, vowel, stop combo:", nan_token.speaker, nan_token.vowel.label, nan_token.stop.label)
+        print("F", measure, "Nan value for this speaker, vowel, stop combo:", nan_token.speaker, nan_token.vowel1.label, nan_token.stop.label)
 
     values = [token.vowel1.measurement_dict[measure][location] for token in tokens]
     values = [value for value in values if not math.isnan(value)]
 
     plt.hist(values, bins=nbins)
-    plt.show()
     if savename != "":
         plt.savefig(savename)
+    plt.show()
+
 
 
 #Helper function: creates plots for f0 and each formant
