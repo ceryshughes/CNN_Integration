@@ -124,9 +124,9 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
                                                                           'Hertz', 'Linear') #I think this str vs object typing warning for the first argument
                                                                             # is due to the imperfect documentation of call; it seems both are allowed
         vowel1_obj.measurement_dict[formant_num]["transit"] = parselmouth.praat.call(formants,"Get value at time", formant_num,
-                                                                                     v1_transit_midpoint,'Hertz', 'Linear')
+                                                                                     vowel1.maxTime,'Hertz', 'Linear')
         vowel2_obj.measurement_dict[formant_num]["steady"] = parselmouth.praat.call(formants,"Get value at time", formant_num,
-                                                                                    v2_steady_midpoint, 'Hertz', 'Linear')
+                                                                                    vowel2.maxTime, 'Hertz', 'Linear')
         vowel2_obj.measurement_dict[formant_num]["transit"] = parselmouth.praat.call(formants, "Get value at time",
                                                                                     formant_num, v2_transit_midpoint,
                                                                                     'Hertz', 'Linear')
@@ -237,6 +237,32 @@ def plot_vowel_measures(tokens,condition, label):
                            nbins, label=label,
                            savename=plot_dir + label + "_v2_transition_F" + str(formant_no) + ".png")
 
+#Returns two lists of VCV objects with values measured from the Laff corpus
+#The first list is composed of voiced stops(bdg), the second voiceless stops(ptk)
+def get_vcv_data():
+    path = "../../laff_vcv_tokens_with_stops"
+    files = os.listdir(path)
+    token_names = list(set([file[0:file.index(".")] for file in files]))
+    token_names.sort()
+
+    voiced_stops = ["b", "d", "g"]  # technically this should be done with enums, but that's low priority for now
+    voiceless_stops = ["p", "t", "k"]
+
+    tokens = []
+    for token_name in token_names:
+        print("Working on", token_name)
+        filename = path + "/" + token_name
+        vcv = read_measurements(filename + ".TextGrid", filename + ".wav")
+        if debug:
+            print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
+            print("\t", vcv.vowel1.measurement_dict)
+        tokens.append(vcv)
+
+    #Filter out glottal stops
+    voiced_stops = [token for token in tokens if token.stop.label in voiced_stops]
+    voiceless_stops = [token for token in tokens if token.stop.label in voiceless_stops]
+
+    return voiced_stops, voiceless_stops
 
 if __name__ == "__main__":
     path = "../../laff_vcv_tokens_with_stops"
