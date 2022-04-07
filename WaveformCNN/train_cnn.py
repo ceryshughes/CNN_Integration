@@ -13,6 +13,8 @@ num_epochs = 10 #todo: What should this be? Donahue's method - inception score- 
 model_save_path = "saved_models/test123"
 
 
+
+
 if __name__ == "__main__":
     #Load in data
     print("Loading in data from directory", wavfile_directory, "with category-labeling csv file", label_csv_file)
