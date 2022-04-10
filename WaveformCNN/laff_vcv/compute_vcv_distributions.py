@@ -9,6 +9,7 @@ debug = True
 class VcvToken:
     def __init__(self, speaker, stop, vowel1, vowel2):
         self.speaker = speaker #String speaker label
+        #todo: should probably save token # too so I can go back and look at recording if I ever need to
         self.stop = stop #Stop object
         self.vowel1 = vowel1 #Vowel object for first vowel
         self.vowel2 = vowel2 #Vowel object for second vowel
@@ -50,8 +51,8 @@ def read_measurements(grid_file_name, wav_file_name):
     label_info = os.path.basename(grid_file_name)
     vowel_label = label_info[0:2] #Vowel is first 2 characters in name
     stop_label = label_info[2] #Stop is next character TODO: fix for glottal stops, which are empty strings
-    if debug:
-        print(vowel_label, stop_label)
+    #if debug:
+   #     print(vowel_label, stop_label)
     split_name = label_info.split("_")
     speaker_info = split_name[1]
 
@@ -75,6 +76,42 @@ def read_measurements(grid_file_name, wav_file_name):
 
     return VcvToken(speaker_info, stop, vowel1, vowel2)
 
+#praat_object: Parselmouth praat object to get the estimate from
+#frequency_type: string, "f0" or "formant"
+#formant_num: define if frequency type is formant, the number of the formant to estimate
+#point: True if estimating at a certain point, False if estimating over an interval
+#timepoint: define if point, in seconds, time to take the estimate from
+#span_begin: define if not point, in seconds, start of interval
+#span_begin: define if not point, in seconds, end of interval
+#For point estimates, repeats at slightly earlier timepoint until the result is a defined number
+#or the offset is greater than 30ms
+#offsetdirection: move measurement backward (-1) or forward(1)
+#Returns the estimate and the offset used to calculate it
+def get_praat_estimate(praat_object, frequency_type, formant_num = 0, point=True, timepoint=0, span_begin=0, span_end=0, offsetDirection = -1):
+    estimate = math.nan
+    offset = 0
+    if point:
+        #If the value isn't defined at this particular point, try budging by a few ms
+        while math.isnan(estimate) and offset <= 0.04:
+            if frequency_type == "formant":
+                estimate = parselmouth.praat.call(praat_object, "Get value at time", formant_num,
+                                                      timepoint + offsetDirection*offset, 'Hertz', 'Linear')
+            else:
+                estimate = parselmouth.praat.call(praat_object, "Get value at time",
+                                                  timepoint + offsetDirection * offset, 'Hertz', 'Linear')
+            offset += .001
+        offset -= .001
+    else:
+        if frequency_type == "formant":
+            estimate = parselmouth.praat.call(praat_object, "Get mean", formant_num,
+                                              span_begin, span_end, 'Hertz')
+        else:
+            estimate = parselmouth.praat.call(praat_object,"Get mean",
+                                              span_begin, span_end, 'Hertz')
+    return estimate, offset
+
+
+
 
 #wav_file_name: string name of a wav file
 #vowel1: a textgrid interval object corresponding to the first vowel
@@ -94,7 +131,7 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
     #getting measurement near closure- calculate slope and interpolate endpoint from earlier measurements?
     #grab last few windows and check variance
     #if checking by hand, do a variable sample
-    v1_steady_midpoint = v1_steady_min + (v1_steady_max - v1_steady_max) / 2.0
+    v1_steady_midpoint = v1_steady_min + (v1_steady_max - v1_steady_min) / 2.0
     # Transition measurement of vowel1: last 10% of the vowel
     v1_transit_min = v1_steady_max
     v1_transit_max = vowel1.maxTime
@@ -109,8 +146,8 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
     v2_steady_max = vowel2.maxTime
     v2_steady_midpoint = v2_steady_min + (v2_steady_max - v2_steady_min) / 2.0
 
-    if debug:
-        print("\t", v1_steady_min, v1_steady_max, v1_steady_midpoint)
+   # if debug:
+   #     print("\t", v1_steady_min, v1_steady_max, v1_steady_midpoint)
 
     # Read wavfile with Praat for formant data
     sound = parselmouth.Sound(wav_file_name)
@@ -118,28 +155,72 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
     formants = parselmouth.praat.call(sound, "To Formant (burg)", 0.0025, 5, 5000, 0.025, 50)
 
     #Take midpoint measurements of steady state vs transition regions
-    formant_range = range(1,6)
+    formant_range = range(1,5)
     for formant_num in formant_range:
-        vowel1_obj.measurement_dict[formant_num]["steady"] = parselmouth.praat.call(formants,"Get value at time", formant_num, v1_steady_midpoint,
-                                                                          'Hertz', 'Linear') #I think this str vs object typing warning for the first argument
-                                                                            # is due to the imperfect documentation of call; it seems both are allowed
-        vowel1_obj.measurement_dict[formant_num]["transit"] = parselmouth.praat.call(formants,"Get value at time", formant_num,
-                                                                                     vowel1.maxTime,'Hertz', 'Linear')
-        vowel2_obj.measurement_dict[formant_num]["steady"] = parselmouth.praat.call(formants,"Get value at time", formant_num,
-                                                                                    vowel2.maxTime, 'Hertz', 'Linear')
-        vowel2_obj.measurement_dict[formant_num]["transit"] = parselmouth.praat.call(formants, "Get value at time",
-                                                                                    formant_num, v2_transit_midpoint,
-                                                                                    'Hertz', 'Linear')
+
+        #########First vowel
+
+        #Value during the flat part of the vowel
+        v1_steady, offset = get_praat_estimate(formants, "formant", formant_num, point=True,
+                                               timepoint=v1_steady_midpoint)
+        if math.isnan(v1_steady) or offset > 0:
+            print(wav_file_name, "v1 steady", formant_num, v1_steady, "offset", offset, v1_steady_midpoint)
+
+        #Value during the transitional part of the vowel
+        v1_transit, offset = get_praat_estimate(formants, "formant", formant_num, point=True,
+                                               timepoint=vowel1.maxTime)
+        if math.isnan(v1_transit) or offset > 0:
+            print(wav_file_name, "v1 transit", formant_num, v1_transit, "offset", offset)
+
+        ########Second vowel
+        # Value during the flat part of the vowel
+        v2_steady, offset = get_praat_estimate(formants, "formant", formant_num, point=True,
+                                                   timepoint=v2_steady_midpoint, offsetDirection=1)
+        if math.isnan(v2_steady) or offset > 0:
+            print(wav_file_name, "v2 steady", formant_num, v2_steady, "offset", offset)
+
+        # Value during the transitional part of the vowel
+        v2_transit, offset = get_praat_estimate(formants, "formant", formant_num, point=True,
+                                                    timepoint=vowel2.minTime, offsetDirection=1)
+        if math.isnan(v2_transit) or offset > 0:
+            print(wav_file_name, "v2 transit", formant_num, v2_transit, "offset", offset)
+
+        vowel1_obj.measurement_dict[formant_num]["steady"] = v1_steady
+        vowel1_obj.measurement_dict[formant_num]["transit"] = v1_transit
+        vowel2_obj.measurement_dict[formant_num]["steady"] = v2_steady
+        vowel2_obj.measurement_dict[formant_num]["transit"] = v2_transit
 
     #Take f0 measurements of steady state vs transition regions (worried f0 won't be well defined if I go too near the  closure)
     #TODO: adjust parameters for different speakers
     #check for cleanness in f0 contours
     pitch = parselmouth.praat.call(sound, "To Pitch", 0.0, 75, 500)  # create a praat pitch object
-    vowel1_obj.measurement_dict[0]["steady"] = parselmouth.praat.call(pitch, "Get mean", v1_steady_min, v1_steady_max, "Hertz")  # get mean pitch
-    vowel2_obj.measurement_dict[0]["steady"] = parselmouth.praat.call(pitch, "Get mean", v1_steady_min, v1_steady_max, "Hertz")
-    vowel1_obj.measurement_dict[0]["transit"] = parselmouth.praat.call(pitch, "Get mean", v1_transit_min, v1_transit_max, "Hertz")
-    vowel2_obj.measurement_dict[0]["transit"] = parselmouth.praat.call(pitch, "Get mean", v2_transit_min,
-                                                                       v2_transit_max, "Hertz")
+
+    #Vowel1 steady pitch
+    v1_steady_f0, offset = get_praat_estimate(pitch,"f0",point=False,span_begin=v1_steady_min,span_end=v1_steady_max)
+    if math.isnan(v1_steady_f0) or offset > 0:
+        print(wav_file_name, "v1 steady f0", v1_steady_f0, "offset", offset)
+
+    #Vowel2 steady pitch
+    v2_steady_f0, offset = get_praat_estimate(pitch, "f0", point=False, span_begin=v2_steady_min,
+                                              span_end=v2_steady_max)
+    if math.isnan(v2_steady_f0) or offset > 0:
+        print(wav_file_name, "v2 steady f0", v2_steady_f0, "offset", offset)
+
+    #Vowel1 transitional pitch
+    v1_transit_f0, offset = get_praat_estimate(pitch, "f0", point=True, timepoint=vowel1.maxTime)
+    if math.isnan(v1_transit_f0) or offset > 0:
+        print(wav_file_name, "v1 transit f0", v1_transit_f0, "offset", offset)
+
+    # Vowel2 transitional pitch
+    v2_transit_f0, offset = get_praat_estimate(pitch, "f0", point=True, timepoint=vowel2.minTime, offsetDirection=1)
+    if math.isnan(v2_transit_f0) or offset > 0:
+        print(wav_file_name, "v2 transit f0", v2_transit_f0, "offset", offset)
+
+
+    vowel1_obj.measurement_dict[0]["steady"] = v1_steady_f0
+    vowel2_obj.measurement_dict[0]["steady"] = v2_steady_f0
+    vowel1_obj.measurement_dict[0]["transit"] = v1_transit_f0
+    vowel2_obj.measurement_dict[0]["transit"] = v2_transit_f0
 
     return vowel1_obj, vowel2_obj
 
@@ -239,23 +320,22 @@ def plot_vowel_measures(tokens,condition, label):
 
 #Returns two lists of VCV objects with values measured from the Laff corpus
 #The first list is composed of voiced stops(bdg), the second voiceless stops(ptk)
-def get_vcv_data():
-    path = "../../laff_vcv_tokens_with_stops"
+def get_vcv_data(path="../../laff_vcv_tokens_with_stops"):
     files = os.listdir(path)
     token_names = list(set([file[0:file.index(".")] for file in files]))
     token_names.sort()
 
-    voiced_stops = ["b", "d", "g"]  # technically this should be done with enums, but that's low priority for now
+    voiced_stops = ["b", "d", "g"]  # this should be done with something like enums, but that's low priority for now
     voiceless_stops = ["p", "t", "k"]
 
     tokens = []
     for token_name in token_names:
-        print("Working on", token_name)
+        #print("Working on", token_name)
         filename = path + "/" + token_name
         vcv = read_measurements(filename + ".TextGrid", filename + ".wav")
-        if debug:
-            print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
-            print("\t", vcv.vowel1.measurement_dict)
+        #if debug:
+        #    print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
+        #    print("\t", vcv.vowel1.measurement_dict)
         tokens.append(vcv)
 
     #Filter out glottal stops
@@ -278,9 +358,9 @@ if __name__ == "__main__":
         print("Working on", token_name)
         filename = path + "/"+token_name
         vcv = read_measurements(filename+".TextGrid", filename+".wav")
-        if debug:
-            print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
-            print("\t", vcv.vowel1.measurement_dict)
+        #if debug:
+        #    print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
+        #    print("\t", vcv.vowel1.measurement_dict)
         tokens.append(vcv)
 
     #Get list of unique vowels, stops, and speakers for splitting up data
@@ -293,8 +373,8 @@ if __name__ == "__main__":
     speakers = list(set([vcv.speaker for vcv in tokens]))
     speakers.sort()
 
-    if debug:
-        print(set([token.stop.label for token in tokens]))
+   # if debug:
+   #     print(set([token.stop.label for token in tokens]))
 
 
     ###Plotting!
