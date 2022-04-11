@@ -434,12 +434,14 @@ get_frequency_parameters <- function(values, num_formants){
 
 #Function to output a KlattGrid file and wav file
 #basename: basename of the KlattGrid that produces a wav file
-#datapath: path to where the KlattGrid(and its wav file, after it's been run) will be saved
+#gridPath: path to where the KlattGrid will be saved (end in /)
+#soundPath: path to where Sound will be saved in the KlattGrid Praat commands
 #num_formants: number of formants to output
 #waypoints: synthesis timepoint parameters for a single sound
 #freqs: synthesis frequency parameters for a single sound
-output_klattgrid <- function(basename, datapath, num_formants, waypoints, freqs, voicing){
-    output_file_name <- paste(basename, ".KlattGrid", sep="")
+output_klattgrid <- function(basename, gridPath, soundPath, num_formants, waypoints, freqs, voicing){
+    klatt_name <- paste(basename, ".KlattGrid", sep="")
+    output_file_name <- paste(gridPath, klatt_name, sep="")
     
     
     #Replace file if it already exists
@@ -448,7 +450,7 @@ output_klattgrid <- function(basename, datapath, num_formants, waypoints, freqs,
     }
     
     #Opening lines
-    lineOut <- paste("Create KlattGrid...", output_file_name, "0", waypoints$v2_end, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
+    lineOut <- paste("Create KlattGrid...", klatt_name, "0", waypoints$v2_end, num_formants, "2", "2", num_formants, "1", "1", "1", sep = " ")
     cat(lineOut, file=output_file_name, sep="\n", append=T)
     cat("\n", file=output_file_name, append = T)
     
@@ -509,7 +511,7 @@ output_klattgrid <- function(basename, datapath, num_formants, waypoints, freqs,
     
     lineOut <- paste("select Sound", basename, sep=" ")
     cat(lineOut, file=output_file_name, sep="\n", append=T)
-    savePath <- paste(dataPath,"/",basename,".wav", sep="")
+    savePath <- paste(soundPath,basename,".wav", sep="")
     lineOut <- paste("Save as WAV file...", savePath, sep=" ")
     cat(lineOut, file=output_file_name, sep="\n", append=T)
     cat("\n", file=output_file_name, append = T)
@@ -519,28 +521,31 @@ output_klattgrid <- function(basename, datapath, num_formants, waypoints, freqs,
 
 
 
-param_file_name <- "sample_klatt_params.xlsx"
-sheet_name <- "F1ClosureDur"
+#param_file_name <- "sample_klatt_params.xlsx"
+param_file_name <- "../WaveformCNN/laff_vcv/sampled_stop_klatt_params.xlsx"
+sheet_name <- "sampled_stop_klatt_params"
 p <- read_excel(param_file_name, sheet = sheet_name)
   
 
 base_name <- "fileOut"
-dataPath <- "klatt"
+gridPath <- "scripts/"
+soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/sounds/" 
 
 for (condition_index in 1:nrow(p)){
   synth_params <- p %>% slice(condition_index)
   timepoints <- get_waypoints(synth_params)
-  if(timepoints$voicing){
-    num_formants = 3
-  }else{
-    num_formants = 5
-  }
+  # if(timepoints$voicing){
+  #   num_formants = 3
+  # }else{
+  #   num_formants = 5
+  # }
+  num_formants = 5
   freqs <- get_frequency_parameters(synth_params, num_formants)
   if(timepoints$voicing){
   print(paste(synth_params$Name,timepoints$v1_end, timepoints$closure_begin, sep = ' '))
   }
   
-  output_klattgrid(synth_params$Name,dataPath,num_formants, timepoints, freqs, timepoints$voicing)
+  output_klattgrid(synth_params$Name,gridPath, soundPath,num_formants, timepoints, freqs, timepoints$voicing)
 }
 
 

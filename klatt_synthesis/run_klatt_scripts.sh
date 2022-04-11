@@ -3,10 +3,10 @@
 # RUN_KLATT_SCRIPTS.SH
 # Project: CNN Perceptual Integration
 # Purpose: script to create Klatt synthesized training wav files from a directory of KlattGrid scripts
-# RUN THIS FROM 
+# RUN THIS FROM C:\Users\hughe\Documents\CNN_Perceptual_Integration_Channel_Bias\Experiment\klatt_synthesis
 
 
-SCRIPTPATH=$PWD/scripts/ # Directory for praat scripts run here
+SCRIPTPATH=scripts/ # Directory for praat scripts run here
 
 
 
@@ -14,7 +14,7 @@ SCRIPTPATH=$PWD/scripts/ # Directory for praat scripts run here
 for klattgrid in $( ls $SCRIPTPATH ); do
 
     #### Run them in Praat
-    /mnt/c/Users/hughe/Desktop/praat6207_win64/Praat.exe --run $klattgrid
+    /mnt/c/Users/hughe/Desktop/praat6207_win64/Praat.exe --run $SCRIPTPATH$klattgrid
 
 done
 

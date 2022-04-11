@@ -16,9 +16,11 @@ constant_synth_params = {"f0TransitionDur": 0.055, #in seconds
                          "f0Closure": 90, #value of f0 during closure voicing, Hz #todo: check these with John because they seem unintuitive
                          #Keep higher formants constant- I just care about relationship between closure+f0+F1
                          #Also, F5 is undefined for pretty much all of the corpus tokens under the standard formant settings
+                         "F2steady":1150,
+                         "F2offset":800,
                          "F3steady":2400,
                          "F3offset":1750,
-                         "F4steady":2400,
+                         "F4steady":3300,
                          "F4offset": 3300,#Do I even need to include the higher formants?
                          "F5offset":3850,
                          "F5steady": 3850
@@ -116,8 +118,8 @@ def generate_klatt_parameter_file(out_file_name, tokens):
                     "ClosureDur" : data.stop.closure_dur,
                     "F1offset": data.vowel1.measurement_dict[1]["transit"],
                     "F1steady": data.vowel1.measurement_dict[1]["steady"],
-                    "F2offset": data.vowel1.measurement_dict[2]["transit"],
-                    "F2steady": data.vowel1.measurement_dict[2]["steady"],
+                    "F2offset": constant_synth_params["F2offset"],
+                    "F2steady": constant_synth_params["F2steady"],
                     "F3offset": constant_synth_params["F3offset"],
                     "F3steady": constant_synth_params["F3steady"],
                     "F4offset": constant_synth_params["F4offset"],
@@ -150,10 +152,10 @@ def compute_noise_boundaries(tokens):
             "transit": statistics.stdev([token.vowel1.measurement_dict[0]["transit"] for token in tokens])},
         1: {"steady": statistics.stdev([token.vowel1.measurement_dict[1]["steady"] for token in tokens]),
             "transit": statistics.stdev([token.vowel1.measurement_dict[1]["transit"] for token in tokens])},
-        2: {"steady": statistics.stdev([token.vowel1.measurement_dict[2]["steady"] for token in tokens]),
-            "transit": statistics.stdev([token.vowel1.measurement_dict[2]["transit"] for token in tokens])},
-        3: {"steady": statistics.stdev([token.vowel1.measurement_dict[3]["steady"] for token in tokens]),
-            "transit": statistics.stdev([token.vowel1.measurement_dict[3]["transit"] for token in tokens])},
+        2: {"steady": 0,
+            "transit": 0},
+        3: {"steady": 0,
+            "transit": 0},
         4: {"steady": 0,  # statistics.stdev([token.vowel1.measurement_dict[4]["steady"] for token in tokens]),
             "transit": 0},  # statistics.stdev([token.vowel1.measurement_dict[4]["transit"] for token in tokens])},
         5: {"steady": 0,  # statistics.stdev([token.vowel1.measurement_dict[4]["steady"] for token in tokens]),

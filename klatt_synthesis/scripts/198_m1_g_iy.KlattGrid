@@ -1,0 +1,98 @@
+Create KlattGrid... 198_m1_g_iy.KlattGrid 0 0.533398648468484 5 2 2 5 1 1 1
+
+Add oral formant bandwidth point... 1 0 60
+Add oral formant amplitude point... 1 0 60
+Add oral formant amplitude point... 1 0.308398648468484 60
+Add oral formant amplitude point... 1 0.318398648468484 0
+Add oral formant amplitude point... 1 0.328398648468484 60
+Add oral formant amplitude point... 1 0.533398648468484 60
+Add oral formant frequency point... 1 0 267.525252370178
+Add oral formant frequency point... 1 0.15 267.525252370178
+Add oral formant frequency point... 1 0.205 157.430781129731
+Add oral formant frequency point... 1 0.215 150
+Add oral formant frequency point... 1 0.308398648468484 150
+Add oral formant frequency point... 1 0.318398648468484 157.430781129731
+Add oral formant frequency point... 1 0.328398648468484 157.430781129731
+Add oral formant frequency point... 1 0.383398648468484 267.525252370178
+Add oral formant frequency point... 1 0.533398648468484 267.525252370178
+
+
+Add oral formant bandwidth point... 2 0 90
+Add oral formant amplitude point... 2 0 60
+Add oral formant amplitude point... 2 0.205 60
+Add oral formant amplitude point... 2 0.215 0
+Add oral formant amplitude point... 2 0.318398648468484 0
+Add oral formant amplitude point... 2 0.328398648468484 60
+Add oral formant amplitude point... 2 0.533398648468484 60
+Add oral formant frequency point... 2 0 1150
+Add oral formant frequency point... 2 0.165 1150
+Add oral formant frequency point... 2 0.205 800
+Add oral formant frequency point... 2 0.328398648468484 800
+Add oral formant frequency point... 2 0.368398648468484 1150
+Add oral formant frequency point... 2 0.533398648468484 1150
+
+
+Add oral formant bandwidth point... 3 0 120
+Add oral formant amplitude point... 3 0 60
+Add oral formant amplitude point... 3 0.205 60
+Add oral formant amplitude point... 3 0.215 0
+Add oral formant amplitude point... 3 0.318398648468484 0
+Add oral formant amplitude point... 3 0.328398648468484 60
+Add oral formant amplitude point... 3 0.533398648468484 60
+Add oral formant frequency point... 3 0 2400
+Add oral formant frequency point... 3 0.165 2400
+Add oral formant frequency point... 3 0.205 1750
+Add oral formant frequency point... 3 0.328398648468484 1750
+Add oral formant frequency point... 3 0.368398648468484 2400
+Add oral formant frequency point... 3 0.533398648468484 2400
+
+
+Add oral formant bandwidth point... 4 0 250
+Add oral formant amplitude point... 4 0 60
+Add oral formant amplitude point... 4 0.205 60
+Add oral formant amplitude point... 4 0.215 0
+Add oral formant amplitude point... 4 0.318398648468484 0
+Add oral formant amplitude point... 4 0.328398648468484 60
+Add oral formant amplitude point... 4 0.533398648468484 60
+Add oral formant frequency point... 4 0 3300
+Add oral formant frequency point... 4 0.165 3300
+Add oral formant frequency point... 4 0.205 3300
+Add oral formant frequency point... 4 0.328398648468484 3300
+Add oral formant frequency point... 4 0.368398648468484 3300
+Add oral formant frequency point... 4 0.533398648468484 3300
+
+
+Add oral formant bandwidth point... 5 0 250
+Add oral formant amplitude point... 5 0 60
+Add oral formant amplitude point... 5 0.205 60
+Add oral formant amplitude point... 5 0.215 0
+Add oral formant amplitude point... 5 0.318398648468484 0
+Add oral formant amplitude point... 5 0.328398648468484 60
+Add oral formant amplitude point... 5 0.533398648468484 60
+Add oral formant frequency point... 5 0 3850
+Add oral formant frequency point... 5 0.165 3850
+Add oral formant frequency point... 5 0.205 3850
+Add oral formant frequency point... 5 0.328398648468484 3850
+Add oral formant frequency point... 5 0.368398648468484 3850
+Add oral formant frequency point... 5 0.533398648468484 3850
+
+
+Add pitch point... 0 123.507846856826
+Add pitch point... 0.15 123.507846856826
+Add pitch point... 0.205 88.4370206814533
+Add pitch point... 0.215 90
+Add pitch point... 0.308398648468484 90
+Add pitch point... 0.318398648468484 88.4370206814533
+Add pitch point... 0.328398648468484 88.4370206814533
+Add pitch point... 0.383398648468484 123.507846856826
+Add pitch point... 0.533398648468484 123.507846856826
+Add voicing amplitude point... 0 60
+Add voicing amplitude point... 0.308398648468484 60
+Add voicing amplitude point... 0.318398648468484 0
+Add voicing amplitude point... 0.318398648468484 0
+Add voicing amplitude point... 0.328398648468484 60
+Add voicing amplitude point... 0.533398648468484 60
+To Sound (special)... 0 0 44100 yes yes no no no no "Powers in tiers" yes yes yes Parallel 1 5 1 1 1 1 1 1 1 1 1 1 1 1 1 5 yes
+select Sound 198_m1_g_iy
+Save as WAV file... C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/sounds/198_m1_g_iy.wav
+

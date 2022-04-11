@@ -1,0 +1,12 @@
+Weird Sounding Tokens
+536_f1_k_ah.wav
+544_m1_t_ah.wav
+545_m1_t_uw.wav
+533_m2_t_eh.wav
+532_m2_k_iy.wav
+
+Some of them sound like bilabials- will that be the influence of the higher formants, that I kept constant?
+
+
+Not sure about my annotation
+owtow_m2_2_ms
