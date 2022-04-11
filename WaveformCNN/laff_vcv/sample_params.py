@@ -165,10 +165,10 @@ def compute_noise_boundaries(tokens):
 
 
 if __name__ == "__main__":
-    num_samples_voiced = 500
-    num_samples_voiceless = 500
-    metadata_fn = "sampled_stop_categories.csv"
-    klatt_param_fn = "sampled_stop_klatt_params.csv"
+    num_samples_voiced = 50
+    num_samples_voiceless = 50
+    metadata_fn = "sampled_stop_categories_100.csv"
+    klatt_param_fn = "sampled_stop_klatt_params_100.csv"
 
     #Get distributions
     voiced_dist, voiceless_dist = compute_vcv_distributions.get_vcv_data()

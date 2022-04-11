@@ -8,11 +8,11 @@ seed(1)
 debug = True
 
 #todo: take command line arguments
-wavfile_directory = "../klatt_synthesis/sounds/"# "sample_wavs/"#
-label_csv_file = "laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
+wavfile_directory = "../klatt_synthesis/sounds_100/"# "sample_wavs/"#
+label_csv_file = "laff_vcv/sampled_stop_categories_100.csv"# "sample_file_info.csv"#
 input_length = 16384 #Following Donahue
 num_epochs = 10 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
-model_save_path = "saved_models/test123_2"
+model_save_path = "saved_models/trial_run_100_tokens"
 
 
 
