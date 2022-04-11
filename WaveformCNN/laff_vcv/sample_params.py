@@ -95,7 +95,7 @@ def generate_stop_metadata_file(out_file_name, tokens):
         for token in tokens:
             file_id = token[0]
             values = token[1]
-            writer.writerow({"FileID":file_id, "Category": values.stop.label})
+            writer.writerow({"FileID":file_id+".wav", "Category": values.stop.label})
 
 
 #tokens: (string, Vcv object) pair
@@ -196,5 +196,7 @@ if __name__ == "__main__":
     #Write metadata and Klatt parameter files
     generate_stop_metadata_file(metadata_fn, sampled_data)
     generate_klatt_parameter_file(klatt_param_fn, sampled_data)
+
+
 
 

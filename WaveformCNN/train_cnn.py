@@ -2,15 +2,17 @@
 import data_processing as data
 import cnn
 import tensorflow as tf
+from numpy.random import seed
+seed(1)
 
 debug = True
 
 #todo: take command line arguments
-wavfile_directory = "sample_wavs/"
-label_csv_file = "sample_file_info.csv"
+wavfile_directory = "../klatt_synthesis/sounds/"# "sample_wavs/"#
+label_csv_file = "laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
 input_length = 16384 #Following Donahue
-num_epochs = 10 #todo: What should this be? Donahue's method - inception score- doesn't transfer here
-model_save_path = "saved_models/test123"
+num_epochs = 10 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
+model_save_path = "saved_models/test123_2"
 
 
 
@@ -26,10 +28,13 @@ if __name__ == "__main__":
         print("Categories are ", category_encoding_map.keys())
         print("Audio Dataset", batched_audio_vectors)
         print("Gold Dataset", batched_encoded_categories)
-        for element in batched_encoded_categories:
-            print("Label",element)
+        #for element in batched_encoded_categories:
+        #    print("Label",element)
+        index = 0
         for element in batched_audio_vectors:
-            print("Audio", element)
+            print("Audio", element, element.shape)
+            if index > 1:
+                break
 
     #Set up and train model
     print("Setting up the CNN categorizer")

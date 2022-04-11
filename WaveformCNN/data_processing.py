@@ -2,13 +2,11 @@
 # -inputs are .wav files in a folder with ID names
 # -gold labels are in a csv file with a FileID column and a Category column; each row represents a file
 
-debug = True
+debug = False
 
-import cnn
 import id_loader #From Donahue's WaveGan
 import pandas
 import os
-import argparse
 import numpy as np
 import tensorflow as tf
 
@@ -22,9 +20,9 @@ import tensorflow as tf
 # Also returns a reverse of this dictionary where the keys are either doubles or tuples of doubles(one-hot) and the values
 # are the category strings
 def category_encoder(categories):
-    if len(categories) == 2:
-        return {categories[0]:0.0, categories[1]:1.0}, {0.0:categories[0], 1.0:categories[1]}
-    else:
+    #if len(categories) == 2:
+    #    return {categories[0]:0.0, categories[1]:1.0}, {0.0:categories[0], 1.0:categories[1]}
+    #else:
         str_to_onehot = {}
         onehot_to_str = {}
         for index, category in enumerate(categories):
@@ -57,10 +55,10 @@ def get_golds(gold_file_name):
 
 
 
-def get_data(wav_file_dir, info_csv, batch_size=64 if not debug else 2,
+def get_data(wav_file_dir, info_csv, batch_size= 64 if not debug else 2,
              decode_fs = 16000,
              fast_wav = False,
-             shuffle = True if not debug else False,
+             shuffle = True,
              prefetch_gpu_num = 0):
     """ Generates objects from data files
     Args:
@@ -152,116 +150,12 @@ def tensor_encodings(tensor, category_encodings):
 
 
 
-#Returns an argument parser with the arguments from Donahue's WaveGan
-def arguments():
-    parser = argparse.ArgumentParser()
 
-    parser.add_argument('mode', type=str, choices=['train', 'preview', 'incept', 'infer'])
-    parser.add_argument('train_dir', type=str,
-                        help='Training directory')
-
-    data_args = parser.add_argument_group('Data')
-    data_args.add_argument('--data_dir', type=str,
-                           help='Data directory containing *only* audio files to load')
-    data_args.add_argument('--data_sample_rate', type=int,
-                           help='Number of audio samples per second')
-    data_args.add_argument('--data_slice_len', type=int, choices=[16384, 32768, 65536],
-                           help='Number of audio samples per slice (maximum generation length)')
-    data_args.add_argument('--data_num_channels', type=int,
-                           help='Number of audio channels to generate (for >2, must match that of data)')
-    data_args.add_argument('--data_overlap_ratio', type=float,
-                           help='Overlap ratio [0, 1) between slices')
-    data_args.add_argument('--data_first_slice', action='store_true', dest='data_first_slice',
-                           help='If set, only use the first slice each audio example')
-    data_args.add_argument('--data_pad_end', action='store_true', dest='data_pad_end',
-                           help='If set, use zero-padded partial slices from the end of each audio file')
-    data_args.add_argument('--data_normalize', action='store_true', dest='data_normalize',
-                           help='If set, normalize the training examples')
-    data_args.add_argument('--data_fast_wav', action='store_true', dest='data_fast_wav',
-                           help='If your data is comprised of standard WAV files (16-bit signed PCM or 32-bit float), use this flag to decode audio using scipy (faster) instead of librosa')
-    data_args.add_argument('--data_prefetch_gpu_num', type=int,
-                           help='If nonnegative, prefetch examples to this GPU (Tensorflow device num)')
-
-    wavegan_args = parser.add_argument_group('WaveGAN')
-    wavegan_args.add_argument('--wavegan_latent_dim', type=int,
-                              help='Number of dimensions of the latent space')
-    wavegan_args.add_argument('--wavegan_kernel_len', type=int,
-                              help='Length of 1D filter kernels')
-    wavegan_args.add_argument('--wavegan_dim', type=int,
-                              help='Dimensionality multiplier for model of G and D')
-    wavegan_args.add_argument('--wavegan_batchnorm', action='store_true', dest='wavegan_batchnorm',
-                              help='Enable batchnorm')
-    wavegan_args.add_argument('--wavegan_disc_nupdates', type=int,
-                              help='Number of discriminator updates per generator update')
-    wavegan_args.add_argument('--wavegan_loss', type=str, choices=['dcgan', 'lsgan', 'wgan', 'wgan-gp'],
-                              help='Which GAN loss to use')
-    wavegan_args.add_argument('--wavegan_genr_upsample', type=str, choices=['zeros', 'nn'],
-                              help='Generator upsample strategy')
-    wavegan_args.add_argument('--wavegan_genr_pp', action='store_true', dest='wavegan_genr_pp',
-                              help='If set, use post-processing filter')
-    wavegan_args.add_argument('--wavegan_genr_pp_len', type=int,
-                              help='Length of post-processing filter for DCGAN')
-    wavegan_args.add_argument('--wavegan_disc_phaseshuffle', type=int,
-                              help='Radius of phase shuffle operation')
-
-    train_args = parser.add_argument_group('Train')
-    train_args.add_argument('--train_batch_size', type=int,
-                            help='Batch size')
-    train_args.add_argument('--train_save_secs', type=int,
-                            help='How often to save model')
-    train_args.add_argument('--train_summary_secs', type=int,
-                            help='How often to report summaries')
-
-    preview_args = parser.add_argument_group('Preview')
-    preview_args.add_argument('--preview_n', type=int,
-                              help='Number of samples to preview')
-
-    incept_args = parser.add_argument_group('Incept')
-    incept_args.add_argument('--incept_metagraph_fp', type=str,
-                             help='Inference model for inception score')
-    incept_args.add_argument('--incept_ckpt_fp', type=str,
-                             help='Checkpoint for inference model')
-    incept_args.add_argument('--incept_n', type=int,
-                             help='Number of generated examples to test')
-    incept_args.add_argument('--incept_k', type=int,
-                             help='Number of groups to test')
-
-    parser.set_defaults(
-        data_dir='./sample_wavs',
-        data_sample_rate=16000,
-        data_slice_len=16384,
-        data_num_channels=1,
-        data_overlap_ratio=0.,
-        data_first_slice=False,
-        data_pad_end=False,
-        data_normalize=False,
-        data_fast_wav=False,
-        data_prefetch_gpu_num=0,
-        wavegan_latent_dim=100,
-        wavegan_kernel_len=25,
-        wavegan_dim=64,
-        wavegan_batchnorm=False,
-        wavegan_disc_nupdates=5,
-        wavegan_loss='wgan-gp',
-        wavegan_genr_upsample='zeros',
-        wavegan_genr_pp=False,
-        wavegan_genr_pp_len=512,
-        wavegan_disc_phaseshuffle=2,
-        train_batch_size=2, #TODO: 64, Changing this to 2 temporarily for testing
-        train_save_secs=300,
-        train_summary_secs=120,
-        preview_n=32,
-        incept_metagraph_fp='./eval/inception/infer.meta',
-        incept_ckpt_fp='./eval/inception/best_acc-103005',
-        incept_n=5000,
-        incept_k=10)
-    return parser
 
 
 
 
 if __name__ == "__main__":
-    args = arguments().parse_args() #todo: clean this up; I don't use command line arguments here anymore
     audio, filenames, gold_labels, category_encodings, encoding_categories= get_data("sample_wavs", "sample_file_info.csv")
     #print(audio)
     print("Gold labels")
