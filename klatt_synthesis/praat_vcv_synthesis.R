@@ -77,7 +77,9 @@ write_formant_amplitude_timecourse <- function (out_file_name,
   
   if(voicing & formant == 1){
     #F1 holding during the closure
-    write_formant_amp_point(out_file_name, formant, voicing_end, formant_amp)
+    write_formant_amp_point(out_file_name, formant, v1_end, formant_amp)
+    write_formant_amp_point(out_file_name, formant, closure_begin, formant_amp/2)
+    write_formant_amp_point(out_file_name, formant, voicing_end, formant_amp/2)
     #F1 transition to silence for silent part of the closure
     write_formant_amp_point(out_file_name, formant, silence_begin, 0)
     
@@ -522,14 +524,14 @@ output_klattgrid <- function(basename, gridPath, soundPath, num_formants, waypoi
 
 
 #param_file_name <- "sample_klatt_params.xlsx"
-param_file_name <- "../WaveformCNN/laff_vcv/sampled_stop_klatt_params.xlsx"
-sheet_name <- "sampled_stop_klatt_params"
+param_file_name <- "../WaveformCNN/laff_vcv/sampled_stop_klatt_params_100.xlsx"
+sheet_name <- "sampled_stop_klatt_params_100"
 p <- read_excel(param_file_name, sheet = sheet_name)
   
 
 base_name <- "fileOut"
-gridPath <- "scripts/"
-soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/sounds/" 
+gridPath <- "scripts_100/"
+soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/sounds_100/" 
 
 for (condition_index in 1:nrow(p)){
   synth_params <- p %>% slice(condition_index)

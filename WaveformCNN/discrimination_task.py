@@ -20,3 +20,13 @@ def get_cosine_distance(model, layer_name, stimuli1, stimuli2):
     stimuli2_rep = intermediate_layer_model(stimuli2)
 
     return scipy.spatial.distance.cosine(stimuli1_rep, stimuli2_rep)
+
+
+#Load model
+
+#Load stimuli for an experiment
+
+
+#For each pair of stimuli, compute cosine distances
+
+#Graph cosine distances as distances between stimuli
