@@ -11,8 +11,8 @@ debug = True
 wavfile_directory = "../klatt_synthesis/sounds_100/"# "sample_wavs/"#
 label_csv_file = "laff_vcv/sampled_stop_categories_100.csv"# "sample_file_info.csv"#
 input_length = 16384 #Following Donahue
-num_epochs = 10 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
-model_save_path = "saved_models/trial_run_100_tokens"
+num_epochs = 1000 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
+model_save_path = "saved_models/trial_run_100_tokens_converge"
 
 
 
@@ -40,7 +40,15 @@ if __name__ == "__main__":
     print("Setting up the CNN categorizer")
     cnn_model = cnn.create_model(len(category_encoding_map.keys()))
     print("Training the CNN categorizer")
-    cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs)
+    #This callback ends training when the metric it's monitoring stops changing by more than "delta"
+    #Because the loss doesn't decrease on every single epoch (not fully batch, and stochasticity in gradient
+    #descent), "patience" gives the model a chance to run for a few more epochs before properly deciding to stop
+    #todo: the delta value I pick is somewhat arbitrary; in my ML education it's always been arbitrary, but
+    #maybe I should check the literature to see if there's a more principled way to decide, e.g. by seeing
+    #how much loss usually changes for this task+model
+    converge_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta = 0.0001, patience=30)
+    cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs,
+                  callbacks = [converge_callback])
 
     print("Saving model to ", model_save_path)
     cnn_model.save(model_save_path)

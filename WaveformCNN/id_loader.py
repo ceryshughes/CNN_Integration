@@ -125,7 +125,7 @@ def id_decode_extract_and_batch(
 
   # Shuffle all filepaths every epoch
   if shuffle:
-    dataset = dataset.shuffle(buffer_size=len(fps))
+    dataset = dataset.shuffle(buffer_size=len(fps),seed=1) #note: I added a random seed for reproducibility
 
   # Repeat
   if repeat:
@@ -229,7 +229,11 @@ def id_decode_extract_and_batch(
 
 
   # Make batches
-  dataset = dataset.batch(batch_size, drop_remainder=True)
+  dataset = dataset.batch(batch_size, drop_remainder=False) #note: I changed this from True to False. I think
+  #Donahue had it set as True because they used infinite batches (just keep recycling the same data) so it didn;t
+  #matter if they threw some data away on a batch; it could get reincorporated on the next batch.
+  #Because I don't want the infinite batching (difficult to work with), I don't want to throw away the
+  #remaining data.
 
   if debug:
     length = 0

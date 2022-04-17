@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import math
 
-debug = True
+debug = False
 
 class VcvToken:
     def __init__(self, speaker, stop, vowel1, vowel2):
@@ -383,12 +383,12 @@ if __name__ == "__main__":
     plot_dir = "laff_plots/"
 
     #Voiced vs voiceless closure durations
-    plot_closure_data([token for token in tokens if token.stop.label not in voiced_stops],nbins, label="Voiceless", savename=plot_dir+"VoicelessClosure.png")
-    plot_closure_data([token for token in tokens if token.stop.label in voiced_stops], nbins, label="Voiced", savename=plot_dir+"VoicedClosure.png")
+    plot_closure_data([token for token in tokens if token.stop.label not in voiced_stops],nbins, label="Voiceless", savename=plot_dir+"VoicelessClosureDur.png")
+    plot_closure_data([token for token in tokens if token.stop.label in voiced_stops], nbins, label="Voiced", savename=plot_dir+"VoicedClosureDur.png")
 
     #Voiced vs voiceless voicing durations
-    plot_closure_data([token for token in tokens if token.stop.label not in voiced_stops], nbins, label="Voiceless", savename=plot_dir+"VoicelessVoicingDur")
-    plot_closure_data([token for token in tokens if token.stop.label in voiced_stops], nbins, label="Voiced", savename=plot_dir+"VoicelessVoicedDur")
+    plot_voicing_data([token for token in tokens if token.stop.label not in voiced_stops], nbins, label="Voiceless", savename=plot_dir+"VoicelessVoicingDur")
+    plot_voicing_data([token for token in tokens if token.stop.label in voiced_stops], nbins, label="Voiced", savename=plot_dir+"VoicedVoicingDur")
 
     #Vowel measurements by vowel
     if debug:
