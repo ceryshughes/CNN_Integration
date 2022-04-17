@@ -156,7 +156,7 @@ def tensor_encodings(tensor, category_encodings):
 
 
 if __name__ == "__main__":
-    audio, filenames, gold_labels, category_encodings, encoding_categories= get_data("sample_wavs", "sample_file_info.csv")
+    audio, filenames, gold_labels, category_encodings, encoding_categories= get_data("../klatt_synthesis/sounds_100/", "laff_vcv/sampled_stop_categories_100.csv")
     #print(audio)
     print("Gold labels")
     for element in audio:

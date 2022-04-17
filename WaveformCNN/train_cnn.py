@@ -1,18 +1,22 @@
 # Program for loading in categorized wavfile data and training a CNN
+from numpy.random import seed
+seed(1)
+from tensorflow import random
+random.set_seed(2)
+
+import numpy as np
 import data_processing as data
 import cnn
 import tensorflow as tf
-from numpy.random import seed
-seed(1)
+
 
 debug = True
 
 #todo: take command line arguments
 wavfile_directory = "../klatt_synthesis/sounds_100/"# "sample_wavs/"#
 label_csv_file = "laff_vcv/sampled_stop_categories_100.csv"# "sample_file_info.csv"#
-input_length = 16384 #Following Donahue
 num_epochs = 1000 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
-model_save_path = "saved_models/trial_run_100_tokens_converge"
+model_save_path = "saved_models/trial_run_100_tokens_converge_2"
 
 
 
@@ -24,18 +28,26 @@ if __name__ == "__main__":
     batched_filenames,\
     batched_encoded_categories,\
     category_encoding_map, encoding_category_map = data.get_data(wavfile_directory, label_csv_file)
+
     if debug:
         print("Categories are ", category_encoding_map.keys())
         print("Audio Dataset", batched_audio_vectors)
         print("Gold Dataset", batched_encoded_categories)
-        #for element in batched_encoded_categories:
-        #    print("Label",element)
+        for element in batched_encoded_categories:
+            print("Label",element)
         index = 0
         for element in batched_audio_vectors:
             print("Audio", element, element.shape)
             if index > 1:
                 break
 
+    if debug:
+        saved_model = tf.keras.models.load_model('saved_models/trial_run_100_tokens_converge_2')
+        y_pred = np.array(saved_model.predict(batched_audio_vectors))
+        y_pred = np.round(y_pred)
+        print(y_pred)
+        print(np.array(batched_encoded_categories))
+        exit()
     #Set up and train model
     print("Setting up the CNN categorizer")
     cnn_model = cnn.create_model(len(category_encoding_map.keys()))

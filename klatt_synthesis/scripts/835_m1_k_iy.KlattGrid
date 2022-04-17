@@ -2,7 +2,9 @@ Create KlattGrid... 835_m1_k_iy.KlattGrid 0 0.552422318947828 5 2 2 5 1 1 1
 
 Add oral formant bandwidth point... 1 0 60
 Add oral formant amplitude point... 1 0 60
-Add oral formant amplitude point... 1 0.247263255560895 60
+Add oral formant amplitude point... 1 0.205 60
+Add oral formant amplitude point... 1 0.215 30
+Add oral formant amplitude point... 1 0.247263255560895 30
 Add oral formant amplitude point... 1 0.257263255560895 0
 Add oral formant amplitude point... 1 0.347422318947828 60
 Add oral formant amplitude point... 1 0.552422318947828 60
