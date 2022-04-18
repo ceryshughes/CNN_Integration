@@ -14,4 +14,4 @@ pip install tensorflow
 pip install keras
 pip install librosa
 
-python train_cnn.py
+python3.8 train_cnn.py
