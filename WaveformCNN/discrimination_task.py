@@ -14,12 +14,18 @@ debug = True
 #model should be a Keras Sequential model, and
 # Stimuli1 and Stimuli2 should be valid input types for model
 def get_cosine_distance(intermediate_model, stimuli1, stimuli2):
-    stimuli1_rep = intermediate_model(stimuli1)
-    stimuli2_rep = intermediate_model(stimuli2)
+    stimuli1 = stimuli1[None,:] #Add batch dimension - batch of 1
+    stimuli2 = stimuli2[None,:]
+    if debug:
+        print("Stimuli input shapes")
+        print(stimuli1.shape)
+        print(stimuli2.shape)
+    stimuli1_rep = intermediate_model.predict(stimuli1)
+    stimuli2_rep = intermediate_model.predict(stimuli2)
     if debug:
         print("Reps for stimuli")
-        print(stimuli1_rep)
-        print(stimuli2_rep)
+        print(stimuli1_rep.shape)
+        print(stimuli2_rep.shape)
         print("\n")
 
     return scipy.spatial.distance.cosine(stimuli1_rep, stimuli2_rep)
@@ -40,6 +46,8 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
 
     stimuli = tf.data.Dataset.zip((filenames, stimuli_audio))
 
+    filenames = list(filenames.as_numpy_iterator())
+
     #For each pair of stimuli, compute cosine distances
     stimuli = list(stimuli.as_numpy_iterator())
     pair_indices = []
@@ -52,7 +60,7 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
     stimuli_pair_distances = {}
     for index,pair in enumerate(stimuli_pairs):
         stimuli_pair_distances[pair_indices[index]] =\
-            get_cosine_distance(model, pair[0], pair[1])
+            get_cosine_distance(model, pair[0][1], pair[1][1])
 
     stimuli_pair_distances = {(filenames[pair[0]],
                                          filenames[pair[1]]):
@@ -67,7 +75,7 @@ if __name__ == "__main__":
     root = "../klatt_synthesis/experimental_stimuli/"
     stimuli_directory_names = [root+"f1_voicing_dur", root+"f1_closure_dur", root+"f0_voicing_dur", root+"f0_closure_dur"]
     stimuli_metadata_file_names = [directory_name+"/metadata.csv" for directory_name in stimuli_directory_names]
-    stimuli_directory_names = [name+"/sounds" for name in stimuli_directory_names]
+    stimuli_directory_names = [name+"/sounds/" for name in stimuli_directory_names]
     results_file_name = "discrim_results/trial_run_1000_tokens_converge_discrim_results.txt"
     layer_name = "hidden_rep"
 
@@ -79,7 +87,8 @@ if __name__ == "__main__":
     model = keras.models.load_model(model_save_name)
     intermediate_layer_model = keras.Model(inputs=model.input,
                                            outputs=model.get_layer(layer_name).output)
-
+    if debug:
+        intermediate_layer_model.summary()
     #Get cosine distances for each pair of stimuli in each task and save in a list of pairs:
     # task name (same name as the directory for the stimuli), dictionary of stimuli filename pairs to cosine
     # distances

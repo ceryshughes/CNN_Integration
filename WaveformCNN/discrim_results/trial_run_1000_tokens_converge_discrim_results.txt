@@ -1,0 +1,104 @@
+../klatt_synthesis/experimental_stimuli/f1_voicing_dur/sounds/
+(b'HighF1_ShortVoicing.wav', b'HighF1_ShortVoicing.wav')	0.0	
+(b'HighF1_ShortVoicing.wav', b'LowF1_ShortVoicing.wav')	0.0021334290504455566	
+(b'HighF1_ShortVoicing.wav', b'HighF1_LongVoicing.wav')	1.913309097290039e-05	
+(b'HighF1_ShortVoicing.wav', b'LowF1_LongVoicing.wav')	0.0022623538970947266	
+(b'LowF1_ShortVoicing.wav', b'LowF1_ShortVoicing.wav')	0.0	
+(b'LowF1_ShortVoicing.wav', b'HighF1_LongVoicing.wav')	0.002099931240081787	
+(b'LowF1_ShortVoicing.wav', b'LowF1_LongVoicing.wav')	1.704692840576172e-05	
+(b'HighF1_LongVoicing.wav', b'HighF1_LongVoicing.wav')	0.0	
+(b'HighF1_LongVoicing.wav', b'LowF1_LongVoicing.wav')	0.002245962619781494	
+(b'LowF1_LongVoicing.wav', b'LowF1_LongVoicing.wav')	0.0	
+
+
+../klatt_synthesis/experimental_stimuli/f1_closure_dur/sounds/
+(b'HighF1_LongClosure_Lowf0.wav', b'HighF1_LongClosure_Lowf0.wav')	0.0	
+(b'HighF1_LongClosure_Lowf0.wav', b'HighF1_LongClosure_Highf0.wav')	0.002185046672821045	
+(b'HighF1_LongClosure_Lowf0.wav', b'LowF1_LongClosure_Highf0.wav')	0.0011962056159973145	
+(b'HighF1_LongClosure_Lowf0.wav', b'LowF1_ShortClosure_Highf0.wav')	0.0002161264419555664	
+(b'HighF1_LongClosure_Lowf0.wav', b'HighF1_ShortClosure_Highf0.wav')	0.0014337897300720215	
+(b'HighF1_LongClosure_Lowf0.wav', b'LowF1_LongClosure_Lowf0.wav')	0.0010317564010620117	
+(b'HighF1_LongClosure_Lowf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.00047463178634643555	
+(b'HighF1_LongClosure_Lowf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.00046747922897338867	
+(b'HighF1_LongClosure_Highf0.wav', b'HighF1_LongClosure_Highf0.wav')	0.0	
+(b'HighF1_LongClosure_Highf0.wav', b'LowF1_LongClosure_Highf0.wav')	0.003846108913421631	
+(b'HighF1_LongClosure_Highf0.wav', b'LowF1_ShortClosure_Highf0.wav')	0.0017139315605163574	
+(b'HighF1_LongClosure_Highf0.wav', b'HighF1_ShortClosure_Highf0.wav')	0.0006492137908935547	
+(b'HighF1_LongClosure_Highf0.wav', b'LowF1_LongClosure_Lowf0.wav')	0.0010668635368347168	
+(b'HighF1_LongClosure_Highf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.0012426376342773438	
+(b'HighF1_LongClosure_Highf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.002475261688232422	
+(b'LowF1_LongClosure_Highf0.wav', b'LowF1_LongClosure_Highf0.wav')	0.0	
+(b'LowF1_LongClosure_Highf0.wav', b'LowF1_ShortClosure_Highf0.wav')	0.0008814334869384766	
+(b'LowF1_LongClosure_Highf0.wav', b'HighF1_ShortClosure_Highf0.wav')	0.004191994667053223	
+(b'LowF1_LongClosure_Highf0.wav', b'LowF1_LongClosure_Lowf0.wav')	0.0009826421737670898	
+(b'LowF1_LongClosure_Highf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.00086212158203125	
+(b'LowF1_LongClosure_Highf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.00034373998641967773	
+(b'LowF1_ShortClosure_Highf0.wav', b'LowF1_ShortClosure_Highf0.wav')	0.0	
+(b'LowF1_ShortClosure_Highf0.wav', b'HighF1_ShortClosure_Highf0.wav')	0.001377701759338379	
+(b'LowF1_ShortClosure_Highf0.wav', b'LowF1_LongClosure_Lowf0.wav')	0.000451505184173584	
+(b'LowF1_ShortClosure_Highf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.0003051161766052246	
+(b'LowF1_ShortClosure_Highf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.0001811981201171875	
+(b'HighF1_ShortClosure_Highf0.wav', b'HighF1_ShortClosure_Highf0.wav')	0.0	
+(b'HighF1_ShortClosure_Highf0.wav', b'LowF1_LongClosure_Lowf0.wav')	0.0017480850219726562	
+(b'HighF1_ShortClosure_Highf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.0015487074851989746	
+(b'HighF1_ShortClosure_Highf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.002392411231994629	
+(b'LowF1_LongClosure_Lowf0.wav', b'LowF1_LongClosure_Lowf0.wav')	0.0	
+(b'LowF1_LongClosure_Lowf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.00022518634796142578	
+(b'LowF1_LongClosure_Lowf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.0005158185958862305	
+(b'HighF1_ShortClosure_Lowf0.wav', b'HighF1_ShortClosure_Lowf0.wav')	0.0	
+(b'HighF1_ShortClosure_Lowf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.00041234493255615234	
+(b'LowF1_ShortClosure_Lowf0.wav', b'LowF1_ShortClosure_Lowf0.wav')	0.0	
+
+
+../klatt_synthesis/experimental_stimuli/f0_voicing_dur/sounds/
+(b'Highf0_ShortVoicing.wav', b'Highf0_ShortVoicing.wav')	0.0	
+(b'Highf0_ShortVoicing.wav', b'Lowf0_ShortVoicing.wav')	0.00030159950256347656	
+(b'Highf0_ShortVoicing.wav', b'Highf0_LongVoicing.wav')	0.00029659271240234375	
+(b'Highf0_ShortVoicing.wav', b'Lowf0_LongVoicing.wav')	0.00020384788513183594	
+(b'Lowf0_ShortVoicing.wav', b'Lowf0_ShortVoicing.wav')	0.0	
+(b'Lowf0_ShortVoicing.wav', b'Highf0_LongVoicing.wav')	1.1920928955078125e-07	
+(b'Lowf0_ShortVoicing.wav', b'Lowf0_LongVoicing.wav')	0.0005085468292236328	
+(b'Highf0_LongVoicing.wav', b'Highf0_LongVoicing.wav')	0.0	
+(b'Highf0_LongVoicing.wav', b'Lowf0_LongVoicing.wav')	0.0005061030387878418	
+(b'Lowf0_LongVoicing.wav', b'Lowf0_LongVoicing.wav')	0.0	
+
+
+../klatt_synthesis/experimental_stimuli/f0_closure_dur/sounds/
+(b'Highf0_ShortClosure_HighF1.wav', b'Highf0_ShortClosure_HighF1.wav')	0.0	
+(b'Highf0_ShortClosure_HighF1.wav', b'Lowf0_LongClosure_LowF1.wav')	0.0017927289009094238	
+(b'Highf0_ShortClosure_HighF1.wav', b'Lowf0_ShortClosure_HighF1.wav')	0.0021582841873168945	
+(b'Highf0_ShortClosure_HighF1.wav', b'Highf0_LongClosure_HighF1.wav')	0.00025659799575805664	
+(b'Highf0_ShortClosure_HighF1.wav', b'Lowf0_LongClosure_HighF1.wav')	0.0027312040328979492	
+(b'Highf0_ShortClosure_HighF1.wav', b'Highf0_LongClosure_LowF1.wav')	0.001082777976989746	
+(b'Highf0_ShortClosure_HighF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.0007247328758239746	
+(b'Highf0_ShortClosure_HighF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.002076089382171631	
+(b'Lowf0_LongClosure_LowF1.wav', b'Lowf0_LongClosure_LowF1.wav')	0.0	
+(b'Lowf0_LongClosure_LowF1.wav', b'Lowf0_ShortClosure_HighF1.wav')	0.00016051530838012695	
+(b'Lowf0_LongClosure_LowF1.wav', b'Highf0_LongClosure_HighF1.wav')	0.0009467005729675293	
+(b'Lowf0_LongClosure_LowF1.wav', b'Lowf0_LongClosure_HighF1.wav')	0.00027191638946533203	
+(b'Lowf0_LongClosure_LowF1.wav', b'Highf0_LongClosure_LowF1.wav')	0.0023615360260009766	
+(b'Lowf0_LongClosure_LowF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.0012454986572265625	
+(b'Lowf0_LongClosure_LowF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.0003120303153991699	
+(b'Lowf0_ShortClosure_HighF1.wav', b'Lowf0_ShortClosure_HighF1.wav')	0.0	
+(b'Lowf0_ShortClosure_HighF1.wav', b'Highf0_LongClosure_HighF1.wav')	0.0010668635368347168	
+(b'Lowf0_ShortClosure_HighF1.wav', b'Lowf0_LongClosure_HighF1.wav')	0.000451505184173584	
+(b'Lowf0_ShortClosure_HighF1.wav', b'Highf0_LongClosure_LowF1.wav')	0.0031155943870544434	
+(b'Lowf0_ShortClosure_HighF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.0017480850219726562	
+(b'Lowf0_ShortClosure_HighF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.0006846189498901367	
+(b'Highf0_LongClosure_HighF1.wav', b'Highf0_LongClosure_HighF1.wav')	0.0	
+(b'Highf0_LongClosure_HighF1.wav', b'Lowf0_LongClosure_HighF1.wav')	0.0017139315605163574	
+(b'Highf0_LongClosure_HighF1.wav', b'Highf0_LongClosure_LowF1.wav')	0.0013919472694396973	
+(b'Highf0_LongClosure_HighF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.0006492137908935547	
+(b'Highf0_LongClosure_HighF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.0013540983200073242	
+(b'Lowf0_LongClosure_HighF1.wav', b'Lowf0_LongClosure_HighF1.wav')	0.0	
+(b'Lowf0_LongClosure_HighF1.wav', b'Highf0_LongClosure_LowF1.wav')	0.0024021267890930176	
+(b'Lowf0_LongClosure_HighF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.001377701759338379	
+(b'Lowf0_LongClosure_HighF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.0001322031021118164	
+(b'Highf0_LongClosure_LowF1.wav', b'Highf0_LongClosure_LowF1.wav')	0.0	
+(b'Highf0_LongClosure_LowF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.0002560615539550781	
+(b'Highf0_LongClosure_LowF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.0015595555305480957	
+(b'Lowf0_ShortClosure_LowF1.wav', b'Lowf0_ShortClosure_LowF1.wav')	0.0	
+(b'Lowf0_ShortClosure_LowF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.000806272029876709	
+(b'Highf0_ShortClosure_LowF1.wav', b'Highf0_ShortClosure_LowF1.wav')	0.0	
+
+
