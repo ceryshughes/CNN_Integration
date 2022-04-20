@@ -524,14 +524,14 @@ output_klattgrid <- function(basename, gridPath, soundPath, num_formants, waypoi
 
 
 #param_file_name <- "sample_klatt_params.xlsx"
-param_file_name <- "experimental_stimuli/f0_closure_dur/klatt_params.xlsx"
+param_file_name <- "experimental_stimuli/f0_voicing_dur/klatt_params.xlsx"
 sheet_name <- "klatt_params"
 p <- read_excel(param_file_name, sheet = sheet_name)
   
 
 
-gridPath <- "experimental_stimuli/f0_closure_dur/scripts/"
-soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/experimental_stimuli/f0_closure_dur/sounds/" 
+gridPath <- "experimental_stimuli/f0_voicing_dur/scripts/"
+soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/experimental_stimuli/f0_voicing_dur/sounds/" 
 
 for (condition_index in 1:nrow(p)){
   synth_params <- p %>% slice(condition_index)
@@ -541,7 +541,7 @@ for (condition_index in 1:nrow(p)){
   # }else{
   #   num_formants = 5
   # }
-  num_formants = 5
+  num_formants = 3
   freqs <- get_frequency_parameters(synth_params, num_formants)
   if(timepoints$voicing){
   print(paste(synth_params$Name,timepoints$v1_end, timepoints$closure_begin, sep = ' '))

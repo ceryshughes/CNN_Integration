@@ -3,7 +3,6 @@ import scipy.spatial
 import tensorflow as tf
 from tensorflow import keras
 import data_processing as data
-import os
 debug = True
 
 #Returns the cosine distance between the model's representation for
@@ -63,28 +62,42 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
 
 
 if __name__ == "__main__":
+    #Run parameters: model, experimental stimuli directories, results file name, hidden layer name
     model_save_name = "saved_models/trial_run_1000_tokens_converge"
-    stimuli_directory_names = []
-    stimuli_metadata_file_names = []
-    results_file_name = "trial_run_1000_tokens_converge_discrim_results"
+    root = "../klatt_synthesis/experimental_stimuli/"
+    stimuli_directory_names = [root+"f1_voicing_dur", root+"f1_closure_dur", root+"f0_voicing_dur", root+"f0_closure_dur"]
+    stimuli_metadata_file_names = [directory_name+"/metadata.csv" for directory_name in stimuli_directory_names]
+    stimuli_directory_names = [name+"/sounds" for name in stimuli_directory_names]
+    results_file_name = "discrim_results/trial_run_1000_tokens_converge_discrim_results.txt"
     layer_name = "hidden_rep"
 
-    model = keras.models.load_model(model_save_name)
 
 
     # Layer activation extraction code based on
     # tutorial at https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
     # Get access to probing layer
+    model = keras.models.load_model(model_save_name)
     intermediate_layer_model = keras.Model(inputs=model.input,
                                            outputs=model.get_layer(layer_name).output)
 
+    #Get cosine distances for each pair of stimuli in each task and save in a list of pairs:
+    # task name (same name as the directory for the stimuli), dictionary of stimuli filename pairs to cosine
+    # distances
     tasks = []
     for index, directory_name in enumerate(stimuli_directory_names):
         stimuli_pair_distances = run_task(intermediate_layer_model, directory_name, stimuli_metadata_file_names[index])
-        tasks.append(stimuli_pair_distances)
+        tasks.append((directory_name, stimuli_pair_distances))
 
+    #Write cosine distances for each pair in each task to output file
     output_file = open(results_file_name, "w+")
-    for task in tasks:
-        output_file.write()
+    for task_name, stimuli_distances in tasks:
+        output_file.write(task_name+"\n")
+        for stimuli_pair in stimuli_distances:
+            output_file.write(str(stimuli_pair)+"\t")
+            output_file.write(str(stimuli_distances[stimuli_pair])+"\t")
+            output_file.write("\n")
+        output_file.write("\n\n")
+    output_file.close()
+
 
 
