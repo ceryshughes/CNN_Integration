@@ -524,14 +524,14 @@ output_klattgrid <- function(basename, gridPath, soundPath, num_formants, waypoi
 
 
 #param_file_name <- "sample_klatt_params.xlsx"
-param_file_name <- "../WaveformCNN/laff_vcv/sampled_stop_klatt_params.xlsx"
-sheet_name <- "sampled_stop_klatt_params"
+param_file_name <- "experimental_stimuli/f0_closure_dur/klatt_params.xlsx"
+sheet_name <- "klatt_params"
 p <- read_excel(param_file_name, sheet = sheet_name)
   
 
 
-gridPath <- "scripts/"
-soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/sounds/" 
+gridPath <- "experimental_stimuli/f0_closure_dur/scripts/"
+soundPath <- "C:/Users/hughe/Documents/CNN_Perceptual_Integration_Channel_Bias/Experiment/klatt_synthesis/experimental_stimuli/f0_closure_dur/sounds/" 
 
 for (condition_index in 1:nrow(p)){
   synth_params <- p %>% slice(condition_index)

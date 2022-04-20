@@ -6,7 +6,7 @@
 # RUN THIS FROM C:\Users\hughe\Documents\CNN_Perceptual_Integration_Channel_Bias\Experiment\klatt_synthesis
 
 
-SCRIPTPATH=scripts_100/ # Directory for praat scripts run here
+SCRIPTPATH=experimental_stimuli/f0_voicing_dur/scripts/ # Directory for praat scripts run here
 
 
 

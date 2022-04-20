@@ -13,10 +13,10 @@ import tensorflow as tf
 debug = True
 
 #todo: take command line arguments
-wavfile_directory = "../klatt_synthesis/sounds_100/"# "sample_wavs/"#
-label_csv_file = "laff_vcv/sampled_stop_categories_100.csv"# "sample_file_info.csv"#
-num_epochs = 1000 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
-model_save_path = "saved_models/trial_run_100_tokens_converge_2"
+wavfile_directory = "../klatt_synthesis/sounds/"# "sample_wavs/"#
+label_csv_file = "laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
+num_epochs = 100 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
+model_save_path = "saved_models/trial_run_1000_tokens_converge"
 
 
 
@@ -41,13 +41,13 @@ if __name__ == "__main__":
             if index > 1:
                 break
 
-    if debug:
-        saved_model = tf.keras.models.load_model('saved_models/trial_run_100_tokens_converge_2')
-        y_pred = np.array(saved_model.predict(batched_audio_vectors))
-        y_pred = np.round(y_pred)
-        print(y_pred)
-        print(np.array(batched_encoded_categories))
-        exit()
+    # if debug:
+    #     saved_model = tf.keras.models.load_model('saved_models/trial_run_100_tokens_converge_2')
+    #     y_pred = np.array(saved_model.predict(batched_audio_vectors))
+    #     y_pred = np.round(y_pred)
+    #     print(y_pred)
+    #     print(np.array(batched_encoded_categories))
+    #     exit()
     #Set up and train model
     print("Setting up the CNN categorizer")
     cnn_model = cnn.create_model(len(category_encoding_map.keys()))
@@ -59,8 +59,9 @@ if __name__ == "__main__":
     #maybe I should check the literature to see if there's a more principled way to decide, e.g. by seeing
     #how much loss usually changes for this task+model
     converge_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta = 0.0001, patience=30)
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_save_path, save_freq = "epoch") #todo: get rid of this magic number. 16 is number of batches per epoch, 10 is number of epochs
     cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs,
-                  callbacks = [converge_callback])
+                  callbacks = [converge_callback, checkpoint_callback])
 
     print("Saving model to ", model_save_path)
     cnn_model.save(model_save_path)
