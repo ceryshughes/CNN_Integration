@@ -23,7 +23,7 @@ item []:
         intervals [3]:
             xmin = 0.22443021857964066 
             xmax = 0.8417136834273669 
-            text = "  " 
+            text = "" 
     item [2]:
         class = "IntervalTier" 
         name = "pulse_voicing" 
@@ -33,7 +33,7 @@ item []:
         intervals [1]:
             xmin = 0 
             xmax = 0.22013868128071407 
-            text = " " 
+            text = "" 
         intervals [2]:
             xmin = 0.22013868128071407 
             xmax = 0.23128180652352848 

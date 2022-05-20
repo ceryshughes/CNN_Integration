@@ -43,7 +43,8 @@ class Stop:
 # Returns a VCV token object with vowel and stop fields populated
 def read_measurements(grid_file_name, wav_file_name):
     tg = textgrid.TextGrid.fromFile(grid_file_name)
-    voicing_tier = [tier for tier in tg.tiers if tier.name == "voicing"][0]
+    #print(grid_file_name)
+    voicing_tier = [tier for tier in tg.tiers if tier.name == "pulse_voicing"][0]
     closure_tier = [tier for tier in tg.tiers if tier.name == "closure"][0]
     vowel_tier = [tier for tier in tg.tiers if tier.name == "vowel"][0]
 
