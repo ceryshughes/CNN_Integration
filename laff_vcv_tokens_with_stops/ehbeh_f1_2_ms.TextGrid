@@ -4,7 +4,7 @@ Object class = "TextGrid"
 xmin = 0 
 xmax = 0.619505239010478 
 tiers? <exists> 
-size = 4 
+size = 5 
 item []: 
     item [1]:
         class = "IntervalTier" 
@@ -26,6 +26,24 @@ item []:
             text = "" 
     item [2]:
         class = "IntervalTier" 
+        name = "pulse_voicing" 
+        xmin = 0 
+        xmax = 0.619505239010478 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.14172717001892715 
+            text = "" 
+        intervals [2]:
+            xmin = 0.14172717001892715 
+            xmax = 0.24923478110928354 
+            text = "v" 
+        intervals [3]:
+            xmin = 0.24923478110928354 
+            xmax = 0.619505239010478 
+            text = "" 
+    item [3]:
+        class = "IntervalTier" 
         name = "closure" 
         xmin = 0 
         xmax = 0.619505239010478 
@@ -36,13 +54,13 @@ item []:
             text = "" 
         intervals [2]:
             xmin = 0.14172717001892715 
-            xmax = 0.26144598373132505 
+            xmax = 0.25009473083465195 
             text = "c" 
         intervals [3]:
-            xmin = 0.26144598373132505 
+            xmin = 0.25009473083465195 
             xmax = 0.619505239010478 
             text = "" 
-    item [3]:
+    item [4]:
         class = "IntervalTier" 
         name = "vowel" 
         xmin = 0 
@@ -68,7 +86,7 @@ item []:
             xmin = 0.5071968484026852 
             xmax = 0.619505239010478 
             text = "" 
-    item [4]:
+    item [5]:
         class = "TextTier" 
         name = "notes" 
         xmin = 0 

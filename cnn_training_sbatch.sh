@@ -9,9 +9,12 @@
 module load cuda/10
 /modules/apps/cuda/10.1.243/samples/bin/x86_64/linux/release/deviceQuery
 
-module load python/3.8
-pip3 install tensorflow==2.6
-pip3 install keras==2.6
-pip3 install librosa==0.8.1
+module load miniconda/4.11.0
+conda activate cerys
 
-python3.8 train_cnn.py
+#pip3 install tensorflow==2.6
+#pip3 install keras==2.6
+#pip3 install librosa==0.8.1
+
+#python3.8 train_cnn.py
+python train_cnn.py

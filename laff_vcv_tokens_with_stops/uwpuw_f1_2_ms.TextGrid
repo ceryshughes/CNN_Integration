@@ -4,7 +4,7 @@ Object class = "TextGrid"
 xmin = 0 
 xmax = 0.682993365986732 
 tiers? <exists> 
-size = 4 
+size = 5 
 item []: 
     item [1]:
         class = "IntervalTier" 
@@ -14,10 +14,10 @@ item []:
         intervals: size = 3 
         intervals [1]:
             xmin = 0 
-            xmax = 0.1435930194064956 
+            xmax = 0.14907544690877816 
             text = "" 
         intervals [2]:
-            xmin = 0.1435930194064956 
+            xmin = 0.14907544690877816 
             xmax = 0.16418748497154023 
             text = "v" 
         intervals [3]:
@@ -26,23 +26,41 @@ item []:
             text = "" 
     item [2]:
         class = "IntervalTier" 
+        name = "pulse_voicing" 
+        xmin = 0 
+        xmax = 0.682993365986732 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.14907544690877816 
+            text = "" 
+        intervals [2]:
+            xmin = 0.14907544690877816 
+            xmax = 0.16418748497154023 
+            text = "v" 
+        intervals [3]:
+            xmin = 0.16418748497154023 
+            xmax = 0.682993365986732 
+            text = "" 
+    item [3]:
+        class = "IntervalTier" 
         name = "closure" 
         xmin = 0 
         xmax = 0.682993365986732 
         intervals: size = 3 
         intervals [1]:
             xmin = 0 
-            xmax = 0.1435930194064956 
+            xmax = 0.14907544690877816 
             text = "" 
         intervals [2]:
-            xmin = 0.1435930194064956 
+            xmin = 0.14907544690877816 
             xmax = 0.23884242264482697 
             text = "c" 
         intervals [3]:
             xmin = 0.23884242264482697 
             xmax = 0.682993365986732 
             text = "" 
-    item [3]:
+    item [4]:
         class = "IntervalTier" 
         name = "vowel" 
         xmin = 0 
@@ -54,10 +72,10 @@ item []:
             text = "" 
         intervals [2]:
             xmin = 0.05572890371165053 
-            xmax = 0.1435930194064956 
+            xmax = 0.14907544690877816 
             text = "v1" 
         intervals [3]:
-            xmin = 0.1435930194064956 
+            xmin = 0.14907544690877816 
             xmax = 0.31460063525909826 
             text = "" 
         intervals [4]:
@@ -68,7 +86,7 @@ item []:
             xmin = 0.48180144105225875 
             xmax = 0.682993365986732 
             text = "" 
-    item [4]:
+    item [5]:
         class = "TextTier" 
         name = "notes" 
         xmin = 0 

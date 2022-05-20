@@ -16,7 +16,7 @@ debug = True
 wavfile_directory = "../klatt_synthesis/sounds/"# "sample_wavs/"#
 label_csv_file = "laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
 num_epochs = 100 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
-model_save_path = "saved_models/trial_run_1000_tokens_converge"
+model_save_path = "saved_models/trial_run_1000_tokens_converge2"
 
 
 
@@ -41,13 +41,15 @@ if __name__ == "__main__":
             if index > 1:
                 break
 
-    # if debug:
-    #     saved_model = tf.keras.models.load_model('saved_models/trial_run_100_tokens_converge_2')
-    #     y_pred = np.array(saved_model.predict(batched_audio_vectors))
-    #     y_pred = np.round(y_pred)
-    #     print(y_pred)
-    #     print(np.array(batched_encoded_categories))
-    #     exit()
+    if debug:
+        saved_model = tf.keras.models.load_model('saved_models/trial_run_1000_tokens_converge')
+        y_pred = np.array(saved_model.predict(batched_audio_vectors))
+        print(y_pred)
+        print(element for element in np.array(batched_encoded_categories))
+        ac = tf.keras.metrics.CategoricalAccuracy()
+        ac.update_state(tf.convert_to_tensor(np.array(batched_encoded_categories)), y_pred)
+        print(ac.result().numpy())
+        exit()
     #Set up and train model
     print("Setting up the CNN categorizer")
     cnn_model = cnn.create_model(len(category_encoding_map.keys()))
