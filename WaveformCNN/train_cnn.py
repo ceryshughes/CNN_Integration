@@ -19,7 +19,7 @@ import sys
 seed(sys.argv[1])  #Reset seed to user specification
 random.set_seed(sys.argv[1])
 
-debug = True
+debug = False
 
 #todo: take command line arguments
 wavfile_directory = sys.argv[3] #"../klatt_synthesis/sounds/"# "sample_wavs/"#
@@ -69,8 +69,11 @@ if __name__ == "__main__":
     #todo: the delta value I pick is somewhat arbitrary; in my ML education it's always been arbitrary, but
     #maybe I should check the literature to see if there's a more principled way to decide, e.g. by seeing
     #how much loss usually changes for this task+model
-    converge_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta = 0.0001, patience=30)
-    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_save_path, save_freq = "epoch") #todo: get rid of this magic number. 16 is number of batches per epoch, 10 is number of epochs
+    converge_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta = 0.0001, patience=30) #Stop training condition  #todo: get rid of this magic number. 16 is number of batches per epoch, 10 is number of epochs
+
+    #Save model after each epoch just in case training gets interrupted
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_save_path, save_freq = "epoch")
+
     cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs,
                   callbacks = [converge_callback, checkpoint_callback])
 

@@ -102,7 +102,7 @@ def create_model(num_classes):
     model = WaveCNN(num_classes=num_classes).model
     #Learning rate, beta1, and clipping values from Donahue
     model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5, clipvalue=0.01), loss = 'categorical_crossentropy',
-                  )
+                metrics=[tf.keras.metrics.Accuracy()])
     return model
 
 

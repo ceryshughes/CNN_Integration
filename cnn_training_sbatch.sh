@@ -17,4 +17,4 @@ conda activate cerys
 #pip3 install librosa==0.8.1
 
 #python3.8 train_cnn.py
-python train_cnn.py
+python train_cnn.py 1 saved_models/pulse_voicing_seed_1 ../klatt_synthesis/sounds_pulse_voicing/ laff_vcv/sampled_stop_categories_pulse_voicing.csv 
