@@ -16,8 +16,8 @@ import sys
 # Second: name to save model to under saved_models (string)
 # Third: name of directory containing sound data (end with /)
 # Fourth: name of stop category information csv file
-seed(sys.argv[1])  #Reset seed to user specification
-random.set_seed(sys.argv[1])
+seed(int(sys.argv[1]))  #Reset seed to user specification
+random.set_seed(int(sys.argv[1]))
 
 debug = False
 
