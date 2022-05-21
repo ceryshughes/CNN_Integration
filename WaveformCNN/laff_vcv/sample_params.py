@@ -2,6 +2,7 @@ import random
 random.seed(1)
 
 import compute_vcv_distributions
+from compute_vcv_distributions import VcvToken
 import statistics
 import csv #todo: convert klatt parameters to csv
 
@@ -34,7 +35,7 @@ def normalize(tokens):
 
 
 #Return a noisy sample from the distribution of VCV tokens in #tokens with a stop label of #label
-##tokens: list of Vcv objects
+#tokens: list of Vcv objects
 #label: string
 def generate_sample_vcv(tokens, label, frequency_stdevs, closure_dur_stdev, closure_voicing_stdev):
     #TODO: use v2 data?
@@ -46,12 +47,12 @@ def generate_sample_vcv(tokens, label, frequency_stdevs, closure_dur_stdev, clos
 
     #Get closure voicing duration and add noise
     voicing = sample_token.stop.voicing_dur
-    voicing += random.uniform(-1 * closure_voicing_stdev, closure_voicing_stdev) #Can I measure variation for a non parameterized distribution?
+    voicing += random.gauss(0, closure_voicing_stdev) #Can I measure variation for a non parameterized distribution?
     voicing = voicing if voicing > 0 else 0
 
     #Get closure duration and add noise
     closure_dur = sample_token.stop.closure_dur
-    closure_dur += random.uniform(-1 * closure_dur_stdev, closure_dur_stdev)
+    closure_dur += random.gauss(0, closure_dur_stdev)
     #If closure_dur becomes 0 from adding noise, set it back to the original
     if closure_dur <= 0:
         closure_dur = sample_token.stop.closure_dur
@@ -64,16 +65,19 @@ def generate_sample_vcv(tokens, label, frequency_stdevs, closure_dur_stdev, clos
     new_stop = compute_vcv_distributions.Stop(label,voicing,closure_dur)
 
     #Construct vowels
-    new_v1 = compute_vcv_distributions.Vowel(sample_token.vowel1.label)
-    new_v2 = compute_vcv_distributions.Vowel(sample_token.vowel2.label)
+    vowel_quality = sample_token.vowel1.label
+    new_v1 = compute_vcv_distributions.Vowel(vowel_quality)
+    new_v2 = compute_vcv_distributions.Vowel(vowel_quality)
     for formant in new_v1.measurement_dict:
-        steady_stdv = frequency_stdevs[formant]["steady"]
+        steady_stdv = frequency_stdevs[vowel_quality][formant]["steady"]
         new_v1.measurement_dict[formant]["steady"] = sample_token.vowel1.measurement_dict[formant]["steady"]
-        new_v1.measurement_dict[formant]["steady"] += random.uniform(-1 * steady_stdv, steady_stdv)
+        new_v1.measurement_dict[formant]["steady"] += random.gauss(0, steady_stdv)
 
-        transit_stdv = frequency_stdevs[formant]["transit"]
+        transit_stdv = frequency_stdevs[vowel_quality][formant]["transit"]
         new_v1.measurement_dict[formant]["transit"] = sample_token.vowel1.measurement_dict[formant]["transit"]
-        new_v1.measurement_dict[formant]["transit"] += random.uniform(-1 * transit_stdv, transit_stdv)
+        new_v1.measurement_dict[formant]["transit"] += random.gauss(0, transit_stdv)
+        if formant == 1 and new_v1.measurement_dict[formant]["transit"] < 90:
+            print(vowel_quality, sample_token.vowel1.measurement_dict[formant]["transit"], transit_stdv)
 
     for formant in new_v2.measurement_dict:
         new_v2.measurement_dict[formant]["steady"] = new_v1.measurement_dict[formant]["steady"]
@@ -141,19 +145,26 @@ def generate_klatt_parameter_file(out_file_name, tokens):
 
 #tokens: list of Vcv object
 #Returns:
-# a dict of number => parameter(string) => double for the noise range for each frequency value
-# the noise range for closure duration (double)
-# the noise range for closure voicing duration (double)
+# a dict of number => vowel label (string) => parameter(string) => double for the noise range for each frequency value
+# the noise range for closure duration (double) for stops
+# the noise range for closure voicing duration (double) for stops
+# informal note: I call this separately for voiced and voiceless stops, so I'm computing the variation for each
+# of their distributions separately
 def compute_noise_boundaries(tokens):
     # Calculate stdev for adding noise
-    closure_dur_stdev = statistics.stdev([token.stop.closure_dur for token in tokens])
-    closure_voicing_stdev = statistics.stdev([token.stop.voicing_dur for token in tokens])
+    closure_dur_stdev = statistics.stdev([token.stop.closure_dur for token in tokens])/3
+    closure_voicing_stdev = statistics.stdev([token.stop.voicing_dur for token in tokens])/3
 
-    frequency_stdevs = {
-        0: {"steady": statistics.stdev([token.vowel1.measurement_dict[0]["steady"] for token in tokens]),
-            "transit": statistics.stdev([token.vowel1.measurement_dict[0]["transit"] for token in tokens])},
-        1: {"steady": statistics.stdev([token.vowel1.measurement_dict[1]["steady"] for token in tokens]),
-            "transit": statistics.stdev([token.vowel1.measurement_dict[1]["transit"] for token in tokens])},
+    frequency_stdevs = {}
+    for vowel in VcvToken.vowels:
+        print(vowel, min([token.vowel1.measurement_dict[1]["steady"] for token in tokens if token.vowel1.label == vowel]))
+        print(vowel,
+              max([token.vowel1.measurement_dict[1]["steady"] for token in tokens if token.vowel1.label == vowel]))
+        frequency_stdevs[vowel] = {
+        0: {"steady": statistics.stdev([token.vowel1.measurement_dict[0]["steady"] for token in tokens if token.vowel1.label == vowel])/3,
+            "transit": statistics.stdev([token.vowel1.measurement_dict[0]["transit"] for token in tokens if token.vowel1.label == vowel])/3},
+        1: {"steady": statistics.stdev([token.vowel1.measurement_dict[1]["steady"] for token in tokens if token.vowel1.label == vowel])/3,
+            "transit": statistics.stdev([token.vowel1.measurement_dict[1]["transit"] for token in tokens if token.vowel1.label == vowel])/3},
         2: {"steady": 0,
             "transit": 0},
         3: {"steady": 0,
@@ -171,9 +182,12 @@ if __name__ == "__main__":
     num_samples_voiceless = 500
     metadata_fn = "sampled_stop_categories.csv"
     klatt_param_fn = "sampled_stop_klatt_params.csv"
+    actual_token_fn = "pulse_voicing_token_measurements.csv"
 
     #Get distributions
     voiced_dist, voiceless_dist = compute_vcv_distributions.get_vcv_data()
+    if debug:
+        generate_klatt_parameter_file(actual_token_fn,[(token.vowel1.label+token.stop.label+token.speaker, token) for token in voiced_dist+voiceless_dist])
 
 
     #Randomly sample frequency and stop values

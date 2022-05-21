@@ -1,6 +1,6 @@
 # Program for loading in categorized wavfile data and training a CNN
 from numpy.random import seed
-seed(1)
+seed(1) #There's randomness in the importing of these libraries, so you have to set the seed early
 from tensorflow import random
 random.set_seed(2)
 
@@ -9,14 +9,23 @@ import data_processing as data
 import cnn
 import tensorflow as tf
 
+import sys
+
+#Program to train and save a CNN voiced vs voiceless stop categorizer.
+#Command line arguments: 1st: random seed (number)
+# Second: name to save model to under saved_models (string)
+# Third: name of directory containing sound data (end with /)
+# Fourth: name of stop category information csv file
+seed(sys.argv[1])  #Reset seed to user specification
+random.set_seed(sys.argv[1])
 
 debug = True
 
 #todo: take command line arguments
-wavfile_directory = "../klatt_synthesis/sounds/"# "sample_wavs/"#
-label_csv_file = "laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
+wavfile_directory = sys.argv[3] #"../klatt_synthesis/sounds/"# "sample_wavs/"#
+label_csv_file = sys.argv[4]#"laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
 num_epochs = 100 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
-model_save_path = "saved_models/trial_run_1000_tokens_converge2"
+model_save_path = "saved_models/"+sys.argv[2] #Model name
 
 
 

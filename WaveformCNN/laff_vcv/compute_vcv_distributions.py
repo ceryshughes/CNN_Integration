@@ -7,6 +7,9 @@ import math
 debug = False
 
 class VcvToken:
+    voiced = ["b", "d", "g"]
+    voiceless = ["p", "t", "k"]
+    vowels = ["aa", "ah", "eh", "iy", "ow", "uw"]
     def __init__(self, speaker, stop, vowel1, vowel2):
         self.speaker = speaker #String speaker label
         #todo: should probably save token # too so I can go back and look at recording if I ever need to
@@ -73,7 +76,11 @@ def read_measurements(grid_file_name, wav_file_name):
     closure_dur = closure.maxTime - closure.minTime
     stop = Stop(stop_label, voicing_dur, closure_dur)
 
-    vowel1, vowel2 = read_vowel_measurements(wav_file_name, vowel_tier[0], vowel_tier[1], vowel_label, vowel_label)
+    if speaker_info[0] == "f1":
+        max_hz = 7000
+    else:
+        max_hz = 5000
+    vowel1, vowel2 = read_vowel_measurements(wav_file_name, vowel_tier[0], vowel_tier[1], vowel_label, vowel_label, max_hz)
 
     return VcvToken(speaker_info, stop, vowel1, vowel2)
 
@@ -120,8 +127,9 @@ def get_praat_estimate(praat_object, frequency_type, formant_num = 0, point=True
 #vowel1_label: the string label for vowel1
 #vowel2_label: the string label for vowel2
 #returns two Vowel objects corresponding to vowel1 and vowel2
+#max_hz: the maximum frequency(Hz) to look for formants in
 #Adapted from the examples in https://github.com/drfeinberg/PraatScripts/blob/master/Measure%20Pitch%2C%20HNR%2C%20Jitter%2C%20Shimmer%2C%20and%20Formants.ipynb
-def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_label):
+def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_label, max_hz = 5000):
     vowel1_obj = Vowel(vowel1_label)
     vowel2_obj = Vowel(vowel2_label)
 
@@ -153,7 +161,7 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
     # Read wavfile with Praat for formant data
     sound = parselmouth.Sound(wav_file_name)
     #TODO: adjust parameters for different speakers
-    formants = parselmouth.praat.call(sound, "To Formant (burg)", 0.0025, 5, 5000, 0.025, 50)
+    formants = parselmouth.praat.call(sound, "To Formant (burg)", 0.0025, 5, max_hz, 0.025, 50)
 
     #Take midpoint measurements of steady state vs transition regions
     formant_range = range(1,5)
@@ -167,9 +175,9 @@ def read_vowel_measurements(wav_file_name, vowel1, vowel2, vowel1_label, vowel2_
         if math.isnan(v1_steady) or offset > 0:
             print(wav_file_name, "v1 steady", formant_num, v1_steady, "offset", offset, v1_steady_midpoint)
 
-        #Value during the transitional part of the vowel
+        #Value during the transitional part of the vowel - take 10ms earlier because of messy closure
         v1_transit, offset = get_praat_estimate(formants, "formant", formant_num, point=True,
-                                               timepoint=vowel1.maxTime)
+                                               timepoint=vowel1.maxTime - .01)
         if math.isnan(v1_transit) or offset > 0:
             print(wav_file_name, "v1 transit", formant_num, v1_transit, "offset", offset)
 
@@ -381,7 +389,7 @@ if __name__ == "__main__":
     ###Plotting!
     #Not sure how to pick the number of bins(continuous values); I went with 20
     nbins = 20
-    plot_dir = "laff_plots/"
+    plot_dir = "laff_plots_pulse_voicing_new_closures/"
 
     #Voiced vs voiceless closure durations
     plot_closure_data([token for token in tokens if token.stop.label not in voiced_stops],nbins, label="Voiceless", savename=plot_dir+"VoicelessClosureDur.png")
@@ -402,9 +410,9 @@ if __name__ == "__main__":
             for stop in voiceless_stops + voiced_stops:
                 plot_vowel_measures(tokens, lambda token: token.vowel1.label == vowel and token.stop.label == stop, label = vowel+"_"+stop)
 
-    #Vowel measurements by stop
-    for stop in voiceless_stops+voiced_stops:
-        plot_vowel_measures(tokens, lambda token: token.stop.label == stop, label=stop)
+    #Vowel measurements by voiced vs voiceless
+    plot_vowel_measures(tokens, lambda token: token.stop.label in voiced_stops, label="Voiced")
+    plot_vowel_measures(tokens, lambda token: token.stop.label in voiceless_stops, label="Voiceless")
 
 
 
