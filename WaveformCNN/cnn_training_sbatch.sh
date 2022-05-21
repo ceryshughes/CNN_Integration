@@ -9,12 +9,15 @@
 #module load cuda/10
 #/modules/apps/cuda/10.1.243/samples/bin/x86_64/linux/release/deviceQuery
 
+#Make sure to run 'conda init bash' before running this script!
+
 module load miniconda/4.11.0
-conda activate cerys
+#conda init bash
+#conda activate cerys
 
 #pip3 install tensorflow==2.6
 #pip3 install keras==2.6
 #pip3 install librosa==0.8.1
 
 #python3.8 train_cnn.py
-python train_cnn.py 1 saved_models/pulse_voicing_seed_1 ../klatt_synthesis/sounds_pulse_voicing/ laff_vcv/sampled_stop_categories_pulse_voicing.csv 
+conda run -n cerys python3.8 train_cnn.py 1 saved_models/pulse_voicing_seed_1 ../klatt_synthesis/sounds_pulse_voicing/ laff_vcv/sampled_stop_categories_pulse_voicing.csv 
