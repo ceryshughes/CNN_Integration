@@ -6,8 +6,8 @@
 #SBATCH -t 24:00:00  # Job time limit
 #SBATCH -o slurm-%j.out  # %j = job ID
  
-module load cuda/10
-/modules/apps/cuda/10.1.243/samples/bin/x86_64/linux/release/deviceQuery
+#module load cuda/10
+#/modules/apps/cuda/10.1.243/samples/bin/x86_64/linux/release/deviceQuery
 
 module load miniconda/4.11.0
 conda activate cerys
