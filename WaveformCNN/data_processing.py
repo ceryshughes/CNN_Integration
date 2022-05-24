@@ -4,6 +4,7 @@
 
 debug = False
 
+#import alt_id_loader as id_loader
 import id_loader #From Donahue's WaveGan
 import pandas
 import os
@@ -107,7 +108,10 @@ def get_data(wav_file_dir, info_csv, batch_size= 64 if not debug else 2,
         for element in batch_categories:
             print("Category",element)
     category_to_encoding, encoding_to_category = category_encoder(list(set(file_category_maps.values())))
-    batch_encoded_categories = batch_categories.map(lambda category: tensor_encodings(category, category_to_encoding))
+    #Make one-hot encoding
+    print(len(category_to_encoding))
+    shape_set = lambda category:  tf.ensure_shape(tensor_encodings(category, category_to_encoding),((None,len(category_to_encoding))))
+    batch_encoded_categories = batch_categories.map(lambda category: shape_set(category))
     if debug:
         for element in batch_encoded_categories:
             print("Encoding",element)

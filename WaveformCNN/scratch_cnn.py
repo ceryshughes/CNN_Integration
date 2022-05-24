@@ -1,3 +1,6 @@
+###Sandbox version of CNN architecture file for debugging/experimenting####
+
+
 #Program to define the architecture of a simple CNN for multiclass classification of waveforms
 #based on Donahue's wavegan but updated to newer version of Tensorflow
 #Also provides a training function
@@ -30,21 +33,14 @@ class WaveCNN():
         # [16384, 1] -> [4096, 64]
         self.model.add(layers.Conv1D(dim, kernel_len,strides=4,padding="same"))
         if use_batchnorm:
-            self.model.add(layers.BatchNormalization())
-        self.model.add(layers.LeakyReLU(alpha=0.2))
-
-        # Layer 1
-        # [4096, 64] -> [1024, 128]
-        self.model.add(layers.Conv1D(dim * 2, kernel_len, strides=4, padding="same"))
-        if use_batchnorm:
-            self.model.add(layers.BatchNormalization())
+             self.model.add(layers.BatchNormalization())
         self.model.add(layers.LeakyReLU(alpha=0.2))
 
         # Layer 2
         # [1024, 128] -> [256, 256]
-        self.model.add(layers.Conv1D(dim*4,kernel_len,strides=4, padding="same"))
+        self.model.add(layers.Conv1D(dim * 4, kernel_len, strides=4, padding="same"))
         if use_batchnorm:
-             self.model.add(layers.BatchNormalization())
+            self.model.add(layers.BatchNormalization())
         self.model.add(layers.LeakyReLU(alpha=0.2))
 
         # Layer 3
@@ -61,6 +57,8 @@ class WaveCNN():
             self.model.add(layers.BatchNormalization())
         self.model.add(layers.LeakyReLU(alpha=0.2))
 
+
+
         # slice_len in original Donahue code? He has 2 extra layers depending on what slice_len is...?
         # Layer 5
         # [16, 1024] -> [
@@ -71,10 +69,10 @@ class WaveCNN():
         # Flatten - in the Donahue code this is to batch_size x -1 (ie a 1D vector for each item in the batch)
         # Since I'm not messing with batch sizes in this architecture class (I think...) I suppose I flatten to
         # just 1D, so shape -1?
-        self.model.add(layers.Reshape((-1,), name="hidden_rep"))#,name="hidden_rep"))
+        self.model.add(layers.Reshape((-1,)))#,name="hidden_rep"))
 
         # Combine features into output later
-        self.model.add(layers.Dense(num_classes))
+        self.model.add(layers.Dense(num_classes, name="hidden_rep"))
 
         self.model.add(layers.Softmax())
         # Donahue *says* this is connected to a single logit but doesn't use an activation function,
@@ -102,7 +100,7 @@ def create_model(num_classes):
     model = WaveCNN(num_classes=num_classes).model
     #Learning rate, beta1, and clipping values from Donahue
     model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5, clipvalue=0.01), loss = 'categorical_crossentropy',
-                metrics=["accuracy"])
+                metrics=['accuracy'])#[tf.keras.metrics.Accuracy()])
     return model
 
 

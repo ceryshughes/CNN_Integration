@@ -6,7 +6,7 @@ random.set_seed(2)
 
 import numpy as np
 import data_processing as data
-import cnn
+import cnn #scratch_cnn as cnn
 import tensorflow as tf
 
 import sys
@@ -21,7 +21,7 @@ random.set_seed(int(sys.argv[1]))
 
 debug = False
 
-#todo: take command line arguments
+
 wavfile_directory = sys.argv[3] #"../klatt_synthesis/sounds/"# "sample_wavs/"#
 label_csv_file = sys.argv[4]#"laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
 num_epochs = 100 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
@@ -38,17 +38,19 @@ if __name__ == "__main__":
     batched_encoded_categories,\
     category_encoding_map, encoding_category_map = data.get_data(wavfile_directory, label_csv_file)
 
-    if debug:
-        print("Categories are ", category_encoding_map.keys())
-        print("Audio Dataset", batched_audio_vectors)
-        print("Gold Dataset", batched_encoded_categories)
-        for element in batched_encoded_categories:
-            print("Label",element)
-        index = 0
-        for element in batched_audio_vectors:
-            print("Audio", element, element.shape)
-            if index > 1:
-                break
+
+
+
+    print("Categories are ", category_encoding_map.keys())
+    print("Audio Dataset", batched_audio_vectors)
+    print("Gold Dataset", batched_encoded_categories)
+    for element in batched_encoded_categories:
+        print("Label",element)
+    index = 0
+    for element in batched_audio_vectors:
+        print("Audio", element, element.shape)
+        if index > 1:
+            break
 
     if debug:
         saved_model = tf.keras.models.load_model('saved_models/trial_run_1000_tokens_converge')
@@ -69,13 +71,15 @@ if __name__ == "__main__":
     #todo: the delta value I pick is somewhat arbitrary; in my ML education it's always been arbitrary, but
     #maybe I should check the literature to see if there's a more principled way to decide, e.g. by seeing
     #how much loss usually changes for this task+model
-    converge_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta = 0.0001, patience=30) #Stop training condition  #todo: get rid of this magic number. 16 is number of batches per epoch, 10 is number of epochs
+    converge_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta = 0.001, patience=30) #Stop training condition  #todo: get rid of this magic number. 16 is number of batches per epoch, 10 is number of epochs
 
     #Save model after each epoch just in case training gets interrupted
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_save_path, save_freq = "epoch")
 
     cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs,
                   callbacks = [converge_callback, checkpoint_callback])
+
+
 
     print("Saving model to ", model_save_path)
     cnn_model.save(model_save_path)

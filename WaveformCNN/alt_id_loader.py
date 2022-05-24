@@ -2,6 +2,7 @@
 # Modified to keep track of gold labels, assumed to be on the file names
 from scipy.io.wavfile import read as wavread
 import numpy as np
+import librosa
 
 import tensorflow as tf
 
@@ -21,45 +22,17 @@ def decode_audio(fp, fs=None, num_channels=1, normalize=False, fast_wav=False):
   Returns:
     A np.float32 array containing the audio samples at specified sample rate.
   """
-  fp = fp.decode('utf-8')
-  if fast_wav:
-    # Read with scipy wavread (fast).
-    _fs, _wav = wavread(fp)
-    if fs is not None and fs != _fs:
-      raise NotImplementedError('Scipy cannot resample audio.')
-    if _wav.dtype == np.int16:
-      _wav = _wav.astype(np.float32)
-      _wav /= 32768.
-    elif _wav.dtype == np.float32:
-      _wav = np.copy(_wav)
-    else:
-      raise NotImplementedError('Scipy cannot process atypical WAV files.')
-  else:
-    # Decode with librosa load (slow but supports file formats like mp3).
-    import librosa
-    _wav, _fs = librosa.core.load(fp, sr=fs, mono=False)
-    if _wav.ndim == 2:
-      _wav = np.swapaxes(_wav, 0, 1)
+
+  # Decode with librosa load (slow but supports file formats like mp3).
+  _wav, _fs = librosa.core.load(fp, sr=fs, mono=False)
+  if _wav.ndim == 2:
+    _wav = np.swapaxes(_wav, 0, 1)
 
   assert _wav.dtype == np.float32
 
   # At this point, _wav is np.float32 either [nsamps,] or [nsamps, nch].
   # We want [nsamps, 1, nch] to mimic 2D shape of spectral feats.
-  if _wav.ndim == 1:
-    nsamps = _wav.shape[0]
-    nch = 1
-  else:
-    nsamps, nch = _wav.shape
-  _wav = np.reshape(_wav, [nsamps, 1, nch])
- 
-  # Average (mono) or expand (stereo) channels
-  if nch != num_channels:
-    if num_channels == 1:
-      _wav = np.mean(_wav, 2, keepdims=True)
-    elif nch == 1 and num_channels == 2:
-      _wav = np.concatenate([_wav, _wav], axis=2)
-    else:
-      raise ValueError('Number of audio channels not equal to num specified')
+
 
   if normalize:
     factor = np.max(np.abs(_wav))
@@ -91,6 +64,7 @@ def id_decode_extract_and_batch(
     prefetch_gpu_num=None):
   """Decodes audio file paths into mini-batches of samples.
 
+
   Args:
     fps: List of audio file paths.
     batch_size: Number of items in the batch.
@@ -121,111 +95,25 @@ def id_decode_extract_and_batch(
     audio: batch_size, slice_len, 1, nch
   """
   # Create dataset of filepaths
-  dataset = tf.data.Dataset.from_tensor_slices(fps)
-
-  # Shuffle all filepaths every epoch
-  # This seems to really hurt performance - is there a bug in how I implemented it?
-  #if shuffle:
-  #  dataset = dataset.shuffle(buffer_size=len(fps),seed=1) #note: I added a random seed for reproducibility
-
-  # Repeat
-  if repeat:
-    dataset = dataset.repeat()
-
-  def _decode_audio_shaped(fp):
-    _decode_audio_closure = lambda _fp: decode_audio(
-      _fp,
-      fs=decode_fs,
-      num_channels=decode_num_channels,
-      normalize=decode_normalize,
-      fast_wav=decode_fast_wav)
-
-    audio = tf.compat.v1.py_func(
-        _decode_audio_closure,
-        [fp],
-        tf.float32,
-        stateful=False)
-    audio.set_shape([None,1, decode_num_channels])
-    return audio
 
 
 
-  # Cerys: I think this function is used to slice up longer audio to make more, smaller training examples.
-  # I don't want to do that; I want to train on whole VCV sequences, so I tried skipping applying this function.
-  #However, that resulted in a lack of padding, which allowed the audio vectors different lengths; they need to
-  #all be the same length so they fit into the network properly and can be batched (for some reason Tensorflow
-  #Dataset won't batch things of different lengths - tensorflow.python.framework.errors_impl.InvalidArgumentError: Cannot
-  # batch tensors with different shapes in component 1". So, I'm going to try and just keep the padding part without
-  # the slicing-up part.
-  #Parallel
-  def _slice(audio):
-    # Calculate hop size
-    if slice_overlap_ratio < 0:
-      raise ValueError('Overlap ratio must be greater than 0')
-    slice_hop = int(round(slice_len * (1. - slice_overlap_ratio)) + 1e-4)
-    if slice_hop < 1:
-      raise ValueError('Overlap ratio too high')
-
-    # Randomize starting phase:  -Cerys: not necessary for me, this is just to handle generator phase artefact
-    # if slice_randomize_offset:
-    #   start = tf.random_uniform([], maxval=slice_len, dtype=tf.int32)
-    #   audio = audio[start:]
-
-    # Extract sliceuences
-    audio_slices = tf.signal.frame(
-        audio,
-        slice_len,
-        slice_hop,
-        pad_end=slice_pad_end,
-        pad_value=0,
-        axis=0)
-
-    # Donahue: Only use first slice if requested
-    # Me: definitely only use first slice because I only want one audio per VCV sequence,
-    # and the VCVs are short so they will fit in the first slice
-    audio_slices = audio_slices[:1]
-
-    return audio_slices
-
-  def _slice_dataset_wrapper(audio):
-    audio_slices = _slice(audio)
-    return tf.data.Dataset.from_tensor_slices(audio_slices)
+  reg_size =  lambda audio: tf.signal.frame(
+    audio,
+    slice_len,
+    frame_step=int(round(slice_len * (1. - slice_overlap_ratio)) + 1e-4),
+    pad_end=slice_pad_end,
+    pad_value=0,
+    axis=0)[:1]
+  reshape = lambda audio: tf.reshape(audio, (slice_len,1))
 
 
 
-  # Extract parallel sliceuences from both audio and features
-  # Decode audio
-  # Cerys: the original line below throws away the file names and replaces them with the audio in those files
-  # Dataset elements can be tuples, so instead of throwing out the file names, I make them the first members of the tuple,
-  # where the second element is the content audio vector
-  # dataset = dataset.map(
-  #     _decode_audio_shaped,
-  #     num_parallel_calls=decode_parallel_calls)
-  fp_dataset = dataset
-  dataset = dataset.map(
-    _decode_audio_shaped,
-    num_parallel_calls=decode_parallel_calls)
-  dataset = dataset.flat_map(_slice_dataset_wrapper)
-  #dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,)))
-  dataset = dataset.map(lambda audio: tf.reshape(audio, (slice_len,1))) #Extra dimension because Conv1d wants size of vector and number of timesteps (but which should be which?)
-  #dataset = dataset.map(lambda audio: tf.reshape(audio, (1,slice_len)))
-  dataset = tf.data.Dataset.zip((fp_dataset, dataset))
-
-  if debug:
-    for element in dataset:
-      print(element)
+  dataset = tf.data.Dataset.from_tensor_slices(([reshape(reg_size(librosa.core.load(fp).set_shape([None, 1, decode_num_channels]))) for fp in fps], fps))
 
 
-  if debug:
-    length = 0
-    for element in dataset:
-      print(element)
-      length += 1
-    print("LENGTH", length)
 
-  # Shuffle examples
-  #if shuffle:
-  #  dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
+
 
 
 
