@@ -7,7 +7,7 @@ import statistics
 import csv #todo: convert klatt parameters to csv
 
 
-debug=True
+debug=False
 
 #Extra closure voicing synthesis parameters
 #These values are taken from the Kingston 2008 experimental stimuli values for the closure voicing set
@@ -29,6 +29,7 @@ constant_synth_params = {"f0TransitionDur": 0.055, #in seconds
                          "F5steady": 3850
                          }
 
+#Might consider doing some vowel normalization across speakers
 def normalize(tokens):
     #TODO
     return tokens
@@ -38,8 +39,6 @@ def normalize(tokens):
 #tokens: list of Vcv objects
 #label: string
 def generate_sample_vcv(tokens, label, frequency_stdevs, closure_dur_stdev, closure_voicing_stdev):
-    #TODO: use v2 data?
-
 
     #Joint sample of values
     tok_indices = list(range(0, len(tokens)))
@@ -51,11 +50,17 @@ def generate_sample_vcv(tokens, label, frequency_stdevs, closure_dur_stdev, clos
     voicing = voicing if voicing > 0 else 0
 
     #Get closure duration and add noise
-    closure_dur = sample_token.stop.closure_dur
-    closure_dur += random.gauss(0, closure_dur_stdev)
-    #If closure_dur becomes 0 from adding noise, set it back to the original
-    if closure_dur <= 0:
-        closure_dur = sample_token.stop.closure_dur
+    #closure_dur = sample_token.stop.closure_dur
+    # Artificially controlling the closure duration distributions
+    # since they aren't that different for voiced vs voiceless in LAFF
+    #for artificial_closure_dur version (neaten up code so version-type is accounted for with
+    # a single point of control instead of switching manually here)
+    closure_dur = .08 if label == "voiced" else .15
+    closure_dur += random.gauss(0, .02) #Smaller standard deviation so they don't overlap as much
+    #Upper and lower limits on what a sensible closure duration would be, based on upper and lower limits
+    #from the data
+    closure_dur = .06 if closure_dur < 0.06 else closure_dur
+    closure_dur = 0.22 if closure_dur > 0.22 else closure_dur
 
     #If closure voicing > closure duration, set them equal
     if voicing > closure_dur:
@@ -180,8 +185,8 @@ def compute_noise_boundaries(tokens):
 if __name__ == "__main__":
     num_samples_voiced = 500
     num_samples_voiceless = 500
-    metadata_fn = "sampled_stop_categories.csv"
-    klatt_param_fn = "sampled_stop_klatt_params.csv"
+    metadata_fn = "sampled_stop_categories_pulse_voicing_artificial_closure_dur.csv"
+    klatt_param_fn = "sampled_stop_klatt_params_pulse_voicing_artificial_closure_dur.csv"
     actual_token_fn = "pulse_voicing_token_measurements.csv"
 
     #Get distributions

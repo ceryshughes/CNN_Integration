@@ -6,7 +6,7 @@
 # RUN THIS FROM C:\Users\hughe\Documents\CNN_Perceptual_Integration_Channel_Bias\Experiment\klatt_synthesis
 
 
-SCRIPTPATH=scripts_pulse_voicing/ # Directory for praat scripts run here; end with /
+SCRIPTPATH=scripts_pulse_voicing_artificial_closure_dur/ # Directory for praat scripts run here; end with /
 
 
 
