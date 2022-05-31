@@ -85,7 +85,7 @@ def id_decode_extract_and_batch(
     slice_pad_end=True, #- needed to make slices same length to be compatible for batching; Donahue has this optional,
         # but I may remove it and just automatically pad
     repeat=False,
-    shuffle=False,
+    shuffle=True,
     shuffle_buffer_size=None,
     prefetch_size=None,
     prefetch_gpu_num=None):
@@ -224,8 +224,8 @@ def id_decode_extract_and_batch(
     print("LENGTH", length)
 
   # Shuffle examples
-  #if shuffle:
-  #  dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
+  if shuffle:
+    dataset = dataset.shuffle(buffer_size=shuffle_buffer_size, seed=1)
 
 
 
