@@ -61,6 +61,13 @@ class WaveCNN():
             self.model.add(layers.BatchNormalization())
         self.model.add(layers.LeakyReLU(alpha=0.2))
 
+        # Layer 5
+        # [64, 512] -> [16, 1024]
+        self.model.add(layers.Conv1D(dim * 32, kernel_len, strides=2, padding="same"))
+        if use_batchnorm:
+            self.model.add(layers.BatchNormalization())
+        self.model.add(layers.LeakyReLU(alpha=0.2))
+
         # slice_len in original Donahue code? He has 2 extra layers depending on what slice_len is...?
         # Layer 5
         # [16, 1024] -> [
