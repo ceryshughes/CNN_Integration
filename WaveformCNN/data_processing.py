@@ -72,9 +72,7 @@ def get_data(wav_file_dir, info_csv, batch_size= 64 if not debug else 2,
         shuffle: True to shuffle the dataset order; False not to shuffle the dataset order (retains category information either way)
         prefetch_size: how much data to prefetch (?)
         prefetch_gpu_num: from Donahue, If nonnegative, prefetch examples to this GPU (Tensorflow device num)
-    Returns: - a batched dataset of audio vectors (Tensorflow Dataset of int.32 vector with 65536 samples)
-             - a corresponding batched dataset of the vectors' file IDs (Tensorflow Dataset of string vectors)
-             - a corresponding list of the vectors' categories in either binary or one-hot representation (Tensorflow Dataset of either int.32 or vector of int.32)
+    Returns: - a batched dataset of one-hot categories (vector of int.32 and audio vectors (Tensorflow Dataset of int.32 vector with 65536 samples)
           - a dictionary of possible categories and their mappings to 0 or 1 if binary or one-hot lists if multiclass
     """
 
@@ -83,7 +81,7 @@ def get_data(wav_file_dir, info_csv, batch_size= 64 if not debug else 2,
     all_sample_filenames = [wav_file_dir+fn for fn in os.listdir(wav_file_dir)]
 
     #This returns a batched Tensorflow Dataset?
-    sample_gold_batches = id_loader.id_decode_extract_and_batch(all_sample_filenames,
+    gold_batches = id_loader.id_decode_extract_and_batch(all_sample_filenames,
         batch_size=batch_size,
         decode_fs=decode_fs,
         decode_num_channels=1,
@@ -96,29 +94,41 @@ def get_data(wav_file_dir, info_csv, batch_size= 64 if not debug else 2,
         prefetch_gpu_num=prefetch_gpu_num)
 
 
-    #Separate the audio data from the filenames
-    batch_filenames = sample_gold_batches.map(lambda fn, audio: fn)
-    batch_filenames = batch_filenames.map(tensor_basename)
-    batch_audio_vectors = sample_gold_batches.map(lambda fn, audio: audio)
+    #Separate the audio data from the filenames - actually don't do this, maybe causing bug of
+    #separating labels from data in shuffle?
+    # batch_filenames = sample_gold_batches.map(lambda fn, audio: fn)
+    # batch_filenames = batch_filenames.map(tensor_basename)
+    # batch_audio_vectors = sample_gold_batches.map(lambda fn, audio: audio)
 
     #Change the filenames to string categories
+    gold_batches = gold_batches.map(lambda fn, audio: (tensor_basename(fn), audio))
     file_category_maps = get_golds(info_csv)
-    batch_categories = batch_filenames.map(lambda name: tensor_categories(name, file_category_maps))
-    if debug:
-        for element in batch_categories:
-            print("Category",element)
+    #for element in file_category_maps:
+    #    print(element, file_category_maps[element])
+    gold_batches = \
+        gold_batches.map(lambda fn, audio: (tensor_categories(fn, file_category_maps), audio))
+    #batch_categories = batch_filenames.map(lambda name: tensor_categories(name, file_category_maps))
+    # if debug:
+    #     for element in batch_categories:
+    #         print("Category",element)
+
+    #Make dictionaries for translating between categories and encodings
     category_to_encoding, encoding_to_category = category_encoder(list(set(file_category_maps.values())))
+
+
     #Make one-hot encoding
-    print(len(category_to_encoding))
-    shape_set = lambda category:  tf.ensure_shape(tensor_encodings(category, category_to_encoding),((None,len(category_to_encoding))))
-    batch_encoded_categories = batch_categories.map(lambda category: shape_set(category))
-    if debug:
-        for element in batch_encoded_categories:
-            print("Encoding",element)
-    batch_encoded_categories = batch_encoded_categories.map(lambda x: tf.cast(x,dtype=tf.float32)) #Can't be integers, has to be floats for Keras
+    #print(len(category_to_encoding))
+    shape_set = lambda category: tf.ensure_shape(tensor_encodings(category, category_to_encoding),((None,len(category_to_encoding))))
+    gold_batches = gold_batches.map(lambda category, audio: (shape_set(category), audio))
+    #if debug:
+    #    for element in batch_encoded_categories:
+    #        print("Encoding",element)
+    gold_batches = gold_batches.map(lambda category, audio: (tf.cast(category,dtype=tf.float32), audio)) #Can't be integers, has to be floats for Keras
+    
+    #Flip gold_batches; data needs to come first, then labels
+    gold_batches = gold_batches.map(lambda category, audio: (audio, category))
 
-
-    return batch_audio_vectors, batch_filenames, batch_encoded_categories, category_to_encoding, encoding_to_category
+    return gold_batches, category_to_encoding, encoding_to_category
 
 #Tensorflow strings can't be used like normal Python strings; if you want to call a string function on them,
 # you have to wrap operations in a

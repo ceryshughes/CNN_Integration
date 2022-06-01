@@ -33,14 +33,15 @@ model_save_path = "saved_models/"+sys.argv[2] #Model name
 if __name__ == "__main__":
     #Load in data
     print("Loading in data from directory", wavfile_directory, "with category-labeling csv file", label_csv_file)
-    batched_audio_vectors, \
-    batched_filenames,\
-    batched_encoded_categories,\
+    training_data,\
     category_encoding_map, encoding_category_map = data.get_data(wavfile_directory, label_csv_file)
 
+    print(training_data)
+    #exit()
 
 
-
+    batched_encoded_categories = training_data.map(lambda category, audio: category)
+    batched_audio_vectors = training_data.map(lambda category, audio: audio)
     print("Categories are ", category_encoding_map.keys())
     print("Audio Dataset", batched_audio_vectors)
     print("Gold Dataset", batched_encoded_categories)
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     #Save model after each epoch just in case training gets interrupted
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_save_path, save_freq = "epoch")
 
-    cnn_model.fit(x=tf.data.Dataset.zip((batched_audio_vectors, batched_encoded_categories)), epochs=num_epochs,
+    cnn_model.fit(training_data, epochs=num_epochs,
                   callbacks = [converge_callback, checkpoint_callback])
 
 
