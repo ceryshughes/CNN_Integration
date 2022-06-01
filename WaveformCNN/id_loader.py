@@ -5,7 +5,8 @@ import numpy as np
 
 import tensorflow as tf
 
-import sys
+import random
+random.seed(1)
 
 debug = False
 
@@ -121,11 +122,15 @@ def id_decode_extract_and_batch(
     audio: batch_size, slice_len, 1, nch
   """
   # Create dataset of filepaths
+  if shuffle:
+      random.shuffle(fps) #Random's shuffle function is in-place
+
   dataset = tf.data.Dataset.from_tensor_slices(fps)
 
   # Shuffle all filepaths every epoch
-  if shuffle:
-    dataset = dataset.shuffle(buffer_size=len(fps),seed=1) #note: I added a random seed for reproducibility
+  #I think doing it with Dataset is buggy for keeping track of the labels, so I shuffle them with random - they're just strings, so it won't take long
+ # if shuffle:
+ #   dataset = dataset.shuffle(buffer_size=len(fps),seed=1) #note: I added a random seed for reproducibility
 
   # Repeat
   if repeat:
