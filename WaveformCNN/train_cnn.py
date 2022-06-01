@@ -24,7 +24,7 @@ debug = False
 
 wavfile_directory = sys.argv[3] #"../klatt_synthesis/sounds/"# "sample_wavs/"#
 label_csv_file = sys.argv[4]#"laff_vcv/sampled_stop_categories.csv"# "sample_file_info.csv"#
-num_epochs = 100 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
+num_epochs = 10 #todo: What should this be? Donahue's method - inception score- doesn't transfer here because it's for GAN productions
 model_save_path = "saved_models/"+sys.argv[2] #Model name
 
 
