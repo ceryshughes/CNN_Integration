@@ -123,7 +123,9 @@ def id_decode_extract_and_batch(
   """
   # Create dataset of filepaths
   if shuffle:
+      print(fps)
       random.shuffle(fps) #Random's shuffle function is in-place
+      print(fps)
 
   dataset = tf.data.Dataset.from_tensor_slices(fps)
 
