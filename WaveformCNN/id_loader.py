@@ -86,7 +86,7 @@ def id_decode_extract_and_batch(
         # but I may remove it and just automatically pad
     repeat=False,
     shuffle=True,
-    shuffle_buffer_size=None,
+    shuffle_buffer_size=1000,
     prefetch_size=None,
     prefetch_gpu_num=None):
   """Decodes audio file paths into mini-batches of samples.
@@ -124,9 +124,8 @@ def id_decode_extract_and_batch(
   dataset = tf.data.Dataset.from_tensor_slices(fps)
 
   # Shuffle all filepaths every epoch
-  # This seems to really hurt performance - is there a bug in how I implemented it?
-  #if shuffle:
-  #  dataset = dataset.shuffle(buffer_size=len(fps),seed=1) #note: I added a random seed for reproducibility
+  if shuffle:
+    dataset = dataset.shuffle(buffer_size=len(fps),seed=1) #note: I added a random seed for reproducibility
 
   # Repeat
   if repeat:
