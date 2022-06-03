@@ -1,9 +1,9 @@
 ﻿FileID,Category
 Highf0_LongClosure_HighF1.wav,high_long_high
-Highf1_ShortClosure_HighF1.wav,high_short_high
+Highf0_ShortClosure_HighF1.wav,high_short_high
 Lowf0_LongClosure_HighF1.wav,low_long_high
 Lowf0_ShortClosure_HighF1.wav,low_short_high
 Highf0_LongClosure_LowF1.wav,high_long_low
-Highf1_ShortClosure_LowF1.wav,high_short_low
+Highf0_ShortClosure_LowF1.wav,high_short_low
 Lowf0_LongClosure_LowF1.wav,low_long_low
 Lowf0_ShortClosure_LowF1.wav,low_short_low
