@@ -97,7 +97,7 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
     for index,pair in enumerate(stimuli_pairs):
         stimulus1 = pair[0]
         stimulus2 = pair[1]
-        category_pair = (encoding_category_map(stimulus1[1]), encoding_category_map(stimulus2[1]))
+        category_pair = (encoding_category_map[tuple(stimulus1[1])], encoding_category_map[tuple(stimulus2[1])])
         stim1_rep = stimulus1[2]
         stim2_rep = stimulus2[2]
         distances[category_pair] = scipy.spatial.distance.cosine(stim1_rep, stim2_rep)
@@ -125,12 +125,12 @@ def write_output(output_fn, tasks):
 
 if __name__ == "__main__":
     #Run parameters: model, experimental stimuli directories, results file name, hidden layer name
-    model_save_name = "saved_models/trial_run_1000_tokens_converge"
+    model_save_name = "saved_models/saved_models/run_seed_1"
     root = "../klatt_synthesis/experimental_stimuli/"
     stimuli_directory_names = [root+"f1_voicing_dur", root+"f1_closure_dur", root+"f0_voicing_dur", root+"f0_closure_dur"]
     stimuli_metadata_file_names = [directory_name+"/metadata.csv" for directory_name in stimuli_directory_names]
     stimuli_directory_names = [name+"/sounds/" for name in stimuli_directory_names]
-    results_file_name = "discrim_results/trial_run_1000_tokens_converge_discrim_results_clean_code.txt"
+    results_file_name = "discrim_results/run_seed_1_discrim_results.txt"
     layer_name = "hidden_rep"
 
 
