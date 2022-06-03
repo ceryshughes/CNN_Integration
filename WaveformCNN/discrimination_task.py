@@ -3,6 +3,7 @@ import scipy.spatial
 import tensorflow as tf
 from tensorflow import keras
 import data_processing as data
+import sys
 debug = True
 
 
@@ -124,13 +125,14 @@ def write_output(output_fn, tasks):
     output_file.close()
 
 if __name__ == "__main__":
+    seed_num = sys.argv[1]
     #Run parameters: model, experimental stimuli directories, results file name, hidden layer name
-    model_save_name = "saved_models/saved_models/run_seed_1"
+    model_save_name = "saved_models/saved_models/run_seed_"+seed_num
     root = "../klatt_synthesis/experimental_stimuli/"
     stimuli_directory_names = [root+"f1_voicing_dur", root+"f1_closure_dur", root+"f0_voicing_dur", root+"f0_closure_dur"]
     stimuli_metadata_file_names = [directory_name+"/metadata.csv" for directory_name in stimuli_directory_names]
     stimuli_directory_names = [name+"/sounds/" for name in stimuli_directory_names]
-    results_file_name = "discrim_results/run_seed_1_discrim_results.txt"
+    results_file_name = "discrim_results/run_seed_"+seed_num+"_discrim_results.txt"
     layer_name = "hidden_rep"
 
 
