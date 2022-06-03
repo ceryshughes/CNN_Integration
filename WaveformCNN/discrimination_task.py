@@ -57,7 +57,7 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
 
     #Create task and name it by the experiment
     split_path = stimuli_directory.split("/")
-    task_data = Task(name=split_path[len(split_path)-2])
+    task_data = Task(name=split_path[len(split_path)-3])
 
     #Load stimuli for an experiment
     batched_cats_and_audio, \
@@ -88,7 +88,7 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
     for i in range(len(list_stimuli)):
         for j in range(len(list_stimuli)):
             # Inefficient but working with small numbers of stimuli per task anyway
-            if (i,j) not in pair_indices and (j,i) not in pair_indices:
+            if (i,j) not in pair_indices and (j,i) not in pair_indices and i!=j:
                 pair_indices.append((i,j))
     stimuli_pairs = [(list_stimuli[i], list_stimuli[j]) for i,j in pair_indices]
 
