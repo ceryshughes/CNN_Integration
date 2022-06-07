@@ -1,0 +1,54 @@
+f1_voicing_dur
+low_F1_short_voicing	high_F1_short_voicing	0.0025823116302490234	
+low_F1_short_voicing	high_F1_long_voicing	0.0025709867477416992	
+low_F1_short_voicing	low_F1_long_voicing	2.288818359375e-05	
+high_F1_short_voicing	high_F1_long_voicing	2.4139881134033203e-05	
+high_F1_short_voicing	low_F1_long_voicing	0.0027900338172912598	
+high_F1_long_voicing	low_F1_long_voicing	0.002761244773864746	
+
+
+f1_closure_dur_low_f0
+low_short_low	low_long_low	0.0012421607971191406	
+low_short_low	high_short_low	0.0007568597793579102	
+low_short_low	high_long_low	0.004385471343994141	
+low_long_low	high_short_low	0.0010371804237365723	
+low_long_low	high_long_low	0.0012413859367370605	
+high_short_low	high_long_low	0.0025300979614257812	
+
+
+f1_closure_dur_high_f0
+high_long_high	low_short_high	0.005394339561462402	
+high_long_high	low_long_high	0.0016121268272399902	
+high_long_high	high_short_high	0.001957714557647705	
+low_short_high	low_long_high	0.0013596415519714355	
+low_short_high	high_short_high	0.0012552738189697266	
+low_long_high	high_short_high	0.0006663799285888672	
+
+
+f0_voicing_dur
+low_long	high_short	0.00038802623748779297	
+low_long	low_short	5.364418029785156e-07	
+low_long	high_long	0.0002257823944091797	
+high_short	low_short	0.00038123130798339844	
+high_short	high_long	0.000102996826171875	
+low_short	high_long	0.00021982192993164062	
+
+
+f0_closure_dur_low_f1
+low_short_low	high_long_low	0.000516355037689209	
+low_short_low	low_long_low	0.0010750293731689453	
+low_short_low	high_short_low	0.0003012418746948242	
+high_long_low	low_long_low	0.0001684427261352539	
+high_long_low	high_short_low	0.0013596415519714355	
+low_long_low	high_short_low	0.0023325681686401367	
+
+
+f0_closure_dur_high_f1
+low_short_high	high_long_high	0.0013762116432189941	
+low_short_high	high_short_high	0.0005196928977966309	
+low_short_high	low_long_high	0.0053064823150634766	
+high_long_high	high_short_high	0.001957714557647705	
+high_long_high	low_long_high	0.0017745494842529297	
+high_short_high	low_long_high	0.007090210914611816	
+
+

@@ -1,0 +1,54 @@
+f1_voicing_dur
+low_F1_short_voicing	high_F1_short_voicing	0.002744019031524658	
+low_F1_short_voicing	high_F1_long_voicing	0.0027562975883483887	
+low_F1_short_voicing	low_F1_long_voicing	3.063678741455078e-05	
+high_F1_short_voicing	high_F1_long_voicing	7.253885269165039e-05	
+high_F1_short_voicing	low_F1_long_voicing	0.002909541130065918	
+high_F1_long_voicing	low_F1_long_voicing	0.0028570890426635742	
+
+
+f1_closure_dur_low_f0
+low_short_low	low_long_low	0.0011321306228637695	
+low_short_low	high_short_low	0.0009467601776123047	
+low_short_low	high_long_low	0.0042070746421813965	
+low_long_low	high_short_low	0.0006551742553710938	
+low_long_low	high_long_low	0.001144707202911377	
+high_short_low	high_long_low	0.002073347568511963	
+
+
+f1_closure_dur_high_f0
+high_long_high	low_short_high	0.004792451858520508	
+high_long_high	low_long_high	0.0015578866004943848	
+high_long_high	high_short_high	0.0019677281379699707	
+low_short_high	low_long_high	0.0012740492820739746	
+low_short_high	high_short_high	0.0011845827102661133	
+low_long_high	high_short_high	0.0010294318199157715	
+
+
+f0_voicing_dur
+low_long	high_short	0.00016230344772338867	
+low_long	low_short	3.5762786865234375e-07	
+low_long	high_long	0.00032132863998413086	
+high_short	low_short	0.00016516447067260742	
+high_short	high_long	0.00017315149307250977	
+low_short	high_long	0.00032633543014526367	
+
+
+f0_closure_dur_low_f1
+low_short_low	high_long_low	0.0005382299423217773	
+low_short_low	low_long_low	0.0009546279907226562	
+low_short_low	high_short_low	0.0003498196601867676	
+high_long_low	low_long_low	0.00021755695343017578	
+high_long_low	high_short_low	0.0012740492820739746	
+low_long_low	high_short_low	0.002160787582397461	
+
+
+f0_closure_dur_high_f1
+low_short_high	high_long_high	0.0018936395645141602	
+low_short_high	high_short_high	0.0008063316345214844	
+low_short_high	low_long_high	0.004738330841064453	
+high_long_high	high_short_high	0.0019677281379699707	
+high_long_high	low_long_high	0.0015731453895568848	
+high_short_high	low_long_high	0.006372272968292236	
+
+

@@ -7,35 +7,22 @@ high_F1_short_voicing	low_F1_long_voicing	0.0010575056076049805
 high_F1_long_voicing	low_F1_long_voicing	0.001114189624786377	
 
 
-f1_closure_dur
-low_short_high	high_long_low	0.00188446044921875	
-low_short_high	low_short_low	9.357929229736328e-05	
-low_short_high	high_long_high	0.001888871192932129	
-low_short_high	high_short_low	0.00036722421646118164	
-low_short_high	high_short_high	0.0004493594169616699	
-low_short_high	low_long_high	0.0005283951759338379	
-low_short_high	low_long_low	0.0006293654441833496	
-high_long_low	low_short_low	0.001530468463897705	
-high_long_low	high_long_high	0.00012451410293579102	
-high_long_low	high_short_low	0.0008540749549865723	
-high_long_low	high_short_high	0.0009937286376953125	
-high_long_low	low_long_high	0.0005437731742858887	
-high_long_low	low_long_low	0.00044018030166625977	
-low_short_low	high_long_high	0.0016720294952392578	
-low_short_low	high_short_low	0.0003141164779663086	
-low_short_low	high_short_high	0.0005422830581665039	
-low_short_low	low_long_high	0.00036460161209106445	
+f1_closure_dur_low_f0
 low_short_low	low_long_low	0.0004048943519592285	
-high_long_high	high_short_low	0.0008879303932189941	
-high_long_high	high_short_high	0.0008101463317871094	
+low_short_low	high_short_low	0.0003141164779663086	
+low_short_low	high_long_low	0.001530468463897705	
+low_long_low	high_short_low	0.00031250715255737305	
+low_long_low	high_long_low	0.00044018030166625977	
+high_short_low	high_long_low	0.0008540749549865723	
+
+
+f1_closure_dur_high_f0
+high_long_high	low_short_high	0.001888871192932129	
 high_long_high	low_long_high	0.0006043314933776855	
-high_long_high	low_long_low	0.0005419254302978516	
-high_short_low	high_short_high	0.00012952089309692383	
-high_short_low	low_long_high	0.00032895803451538086	
-high_short_low	low_long_low	0.00031250715255737305	
-high_short_high	low_long_high	0.00043320655822753906	
-high_short_high	low_long_low	0.00046634674072265625	
-low_long_high	low_long_low	4.100799560546875e-05	
+high_long_high	high_short_high	0.0008101463317871094	
+low_short_high	low_long_high	0.0005283951759338379	
+low_short_high	high_short_high	0.0004493594169616699	
+low_long_high	high_short_high	0.00043320655822753906	
 
 
 f0_voicing_dur
@@ -47,34 +34,21 @@ high_short	high_long	5.9664249420166016e-05
 low_short	high_long	8.428096771240234e-05	
 
 
-f0_closure_dur
-low_long_high	high_long_low	0.002493739128112793	
-low_long_high	low_short_low	0.003436863422393799	
-low_long_high	low_short_high	0.001833498477935791	
-low_long_high	high_short_low	0.004803597927093506	
-low_long_high	high_short_high	0.002825140953063965	
-low_long_high	high_long_high	0.0007533431053161621	
-low_long_high	low_long_low	0.0017933249473571777	
-high_long_low	low_short_low	0.00022208690643310547	
-high_long_low	low_short_high	0.001079857349395752	
-high_long_low	high_short_low	0.0005283951759338379	
-high_long_low	high_short_high	0.00043320655822753906	
-high_long_low	high_long_high	0.0006043314933776855	
-high_long_low	low_long_low	8.618831634521484e-05	
-low_short_low	low_short_high	0.0009037256240844727	
-low_short_low	high_short_low	0.0001633167266845703	
-low_short_low	high_short_high	0.00021266937255859375	
-low_short_low	high_long_high	0.0010967850685119629	
+f0_closure_dur_low_f1
+low_short_low	high_long_low	0.00022208690643310547	
 low_short_low	low_long_low	0.0003746151924133301	
-low_short_high	high_short_low	0.0015364289283752441	
-low_short_high	high_short_high	0.0004063248634338379	
+low_short_low	high_short_low	0.0001633167266845703	
+high_long_low	low_long_low	8.618831634521484e-05	
+high_long_low	high_short_low	0.0005283951759338379	
+low_long_low	high_short_low	0.0008783340454101562	
+
+
+f0_closure_dur_high_f1
 low_short_high	high_long_high	0.000643312931060791	
-low_short_high	low_long_low	0.000865936279296875	
-high_short_low	high_short_high	0.0004493594169616699	
-high_short_low	high_long_high	0.001888871192932129	
-high_short_low	low_long_low	0.0008783340454101562	
-high_short_high	high_long_high	0.0008101463317871094	
-high_short_high	low_long_low	0.0004931092262268066	
-high_long_high	low_long_low	0.0003235340118408203	
+low_short_high	high_short_high	0.0004063248634338379	
+low_short_high	low_long_high	0.001833498477935791	
+high_long_high	high_short_high	0.0008101463317871094	
+high_long_high	low_long_high	0.0007533431053161621	
+high_short_high	low_long_high	0.002825140953063965	
 
 
