@@ -141,12 +141,16 @@ def write_output(output_fn, tasks):
         output_file.write("\n\n")
     output_file.close()
 
-#Each row corresponds to a pair of stimuli
-#Each row has experiment name, cue values for Stim1, cue values for Stim2 (blanks for the cues that
-#aren't manipulated in the experiment)
+# Outputs cosine distances and corresponding data in csv format
+# Each row corresponds to a pair of stimuli
+# Each row has trial name (if defined),
+# experiment name, cue values for Stim1, cue values for Stim2 (blanks for the cues that
+# aren't manipulated in the experiment)
 # diagonal?(1 for diagonal, 0 for not diagonal) and distance
-def csv_write_output(output_fn, tasks):
+def csv_write_output(output_fn, tasks, trialname = None):
     fields = ["Experiment","Distance", "Diagonal?"]
+    if trialname:
+        fields.append(trialname)
     cues = set().union(*[set(task.cue_names) for task in tasks]) #Get names of all the cue fields across tasks
     stim1_cues = ["stim1_"+cue_name for cue_name in cues]
     stim2_cues = ["stim2_"+cue_name for cue_name in cues]
@@ -174,7 +178,10 @@ def csv_write_output(output_fn, tasks):
                 formatted_cue_values_stim2 = {"stim2_"+name: value for name, value in cue_values_stim2}
 
                 distance = task.distances[stimuli_pair]
+
                 pair_dict = {"Experiment": task.name, "Distance": distance,"Diagonal": diagonal}
+                if trialname:
+                    pair_dict["Trial"] = trialname
                 pair_dict.update(formatted_cue_values_stim1)
                 pair_dict.update(formatted_cue_values_stim2)
                 writer.writerow(pair_dict)
@@ -216,7 +223,7 @@ if __name__ == "__main__":
         tasks.append(task_info)
 
     #Write cosine distances for each pair in each task to output file
-    write_output(results_file_name, tasks)
+    csv_write_output(results_file_name, tasks, trialname=str(seed_num))
 
 
 
