@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 import data_processing as data
 import sys
+import csv
 debug = True
 
 
@@ -23,6 +24,22 @@ class Task():
         self.category_encodings = category_encodings
         self.encoding_categories = encoding_categories
         self.distances = distances
+
+        #Get the varied cues used in stimuli categories based on
+        #category names
+        category_names = self.category_encodings.keys()
+        self.cue_names = [string for string in category_names.split("_") if string != "0" and string != "1"]
+
+    #Returns dictionary of cue:value read from stimulus_category(string of value_cue_value_cue...)
+    def cue_values(self, stimulus_category):
+        cats_vals = stimulus_category.split("_")
+        cat_val_dict = {}
+        index = 0
+        while index < len(cats_vals) - 1:
+            cat_val_dict[index+1] = cat_val_dict[index]
+            index += 2
+        return cat_val_dict
+
 
 
 #Returns the cosine distance between the model's representation for
@@ -123,6 +140,48 @@ def write_output(output_fn, tasks):
             output_file.write("\n")
         output_file.write("\n\n")
     output_file.close()
+
+#Each row corresponds to a pair of stimuli
+#Each row has experiment name, cue values for Stim1, cue values for Stim2 (blanks for the cues that
+#aren't manipulated in the experiment)
+# diagonal?(1 for diagonal, 0 for not diagonal) and distance
+def csv_write_output(output_fn, tasks):
+    fields = ["Experiment","Distance", "Diagonal?"]
+    cues = set().union(*[set(task.cue_names) for task in tasks]) #Get names of all the cue fields across tasks
+    stim1_cues = ["stim1_"+cue_name for cue_name in cues]
+    stim2_cues = ["stim2_"+cue_name for cue_name in cues]
+    fields += stim1_cues
+    fields+= stim2_cues
+
+    with open(output_fn, 'w+', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fields)
+        for task in tasks:
+            for stimuli_pair in task.distances: #A row for each stimulus pair
+                stim1 = stimuli_pair[0]
+                stim2 = stimuli_pair[1]
+
+                cue_values_stim1 = task.cue_values(stim1)
+                cue_values_stim2 = task.cue_values(stim2)
+
+                #compute if the stimulus pair is along the diagonal in the space
+                diagonal = 1
+                for cue in cue_values_stim1:
+                    if cue_values_stim1[cue] == cue_values_stim2[cue]:
+                        diagonal = 0
+
+                #update the key names for the cue values so they can be added separately to the CSV
+                formatted_cue_values_stim1 = {"stim1_"+name: value for name, value in cue_values_stim1}
+                formatted_cue_values_stim2 = {"stim2_"+name: value for name, value in cue_values_stim2}
+
+                distance = task.distances[stimuli_pair]
+                pair_dict = {"Experiment": task.name, "Distance": distance,"Diagonal": diagonal}
+                pair_dict.update(formatted_cue_values_stim1)
+                pair_dict.update(formatted_cue_values_stim2)
+                writer.writerow(pair_dict)
+
+
+
+
 
 if __name__ == "__main__":
     seed_num = sys.argv[1]
