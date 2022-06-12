@@ -25,8 +25,14 @@ class Task():
         self.encoding_categories = encoding_categories
         self.distances = distances
 
-        #Get the varied cues used in stimuli categories based on
-        #category names
+
+
+    #Defines an instance variable cue_names, a list of the cues
+    #involved in this experiment, based on the keys of self.category_encodings
+    #self.category_encodings must not be None
+    def set_cue_names(self):
+        # Get the varied cues used in stimuli categories based on
+        # category names
         category_names = self.category_encodings.keys()
         self.cue_names = [string for string in category_names.split("_") if string != "0" and string != "1"]
 
@@ -83,6 +89,8 @@ def run_task(model, stimuli_directory, stimuli_metadata_csv):
 
     task_data.category_encodings = category_encoding_map
     task_data.encoding_categories = encoding_category_map
+    task_data.set_cue_names()
+
     stimuli = batched_cats_and_audio.unbatch()
 
     #Get model representation for each stimulus by calling model.predict
