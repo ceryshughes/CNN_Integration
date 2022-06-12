@@ -34,7 +34,7 @@ class Task():
         # Get the varied cues used in stimuli categories based on
         # category names
         category_names = self.category_encodings.keys()
-        self.cue_names = [string for string in category_names.split("_") if string != "0" and string != "1"]
+        self.cue_names = [string for category in category_names for string in category.split("_") if string != "0" and string != "1" ]
 
     #Returns dictionary of cue:value read from stimulus_category(string of value_cue_value_cue...)
     def cue_values(self, stimulus_category):
