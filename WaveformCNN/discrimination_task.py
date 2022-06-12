@@ -158,7 +158,7 @@ def write_output(output_fn, tasks):
 def csv_write_output(output_fn, tasks, trialname = None):
     fields = ["Experiment","Distance", "Diagonal?"]
     if trialname:
-        fields.append(trialname)
+        fields.append("Trial")
     cues = set().union(*[set(task.cue_names) for task in tasks]) #Get names of all the cue fields across tasks
     stim1_cues = ["stim1_"+cue_name for cue_name in cues]
     stim2_cues = ["stim2_"+cue_name for cue_name in cues]
@@ -187,7 +187,7 @@ def csv_write_output(output_fn, tasks, trialname = None):
 
                 distance = task.distances[stimuli_pair]
 
-                pair_dict = {"Experiment": task.name, "Distance": distance,"Diagonal": diagonal}
+                pair_dict = {"Experiment": task.name, "Distance": distance,"Diagonal?": diagonal}
                 if trialname:
                     pair_dict["Trial"] = trialname
                 pair_dict.update(formatted_cue_values_stim1)
