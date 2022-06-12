@@ -42,7 +42,7 @@ class Task():
         cat_val_dict = {}
         index = 0
         while index < len(cats_vals) - 1:
-            cat_val_dict[index+1] = cat_val_dict[index]
+            cat_val_dict[cats_vals[index+1]] = cats_vals[index]
             index += 2
         return cat_val_dict
 
