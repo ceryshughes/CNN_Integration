@@ -209,7 +209,7 @@ if __name__ == "__main__":
                                root+"f0_closure_dur_low_f1", root+"f0_closure_dur_high_f1"]
     stimuli_metadata_file_names = [directory_name+"/metadata.csv" for directory_name in stimuli_directory_names]
     stimuli_directory_names = [name+"/sounds/" for name in stimuli_directory_names]
-    results_file_name = "discrim_results/run_seed_"+seed_num+"_discrim_results.txt"
+    results_file_name = "discrim_results/run_seed_"+seed_num+"_discrim_results.csv"
     layer_name = "hidden_rep"
 
 
