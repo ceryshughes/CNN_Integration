@@ -182,8 +182,8 @@ def csv_write_output(output_fn, tasks, trialname = None):
                         diagonal = 0
 
                 #update the key names for the cue values so they can be added separately to the CSV
-                formatted_cue_values_stim1 = {"stim1_"+name: value for name, value in cue_values_stim1}
-                formatted_cue_values_stim2 = {"stim2_"+name: value for name, value in cue_values_stim2}
+                formatted_cue_values_stim1 = {"stim1_"+name: cue_values_stim1[name] for name in cue_values_stim1}
+                formatted_cue_values_stim2 = {"stim2_"+name: cue_values_stim2[name] for name in cue_values_stim2}
 
                 distance = task.distances[stimuli_pair]
 
