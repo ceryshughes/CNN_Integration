@@ -167,6 +167,7 @@ def csv_write_output(output_fn, tasks, trialname = None):
 
     with open(output_fn, 'w+', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fields)
+        writer.writeheader()
         for task in tasks:
             for stimuli_pair in task.distances: #A row for each stimulus pair
                 stim1 = stimuli_pair[0]
