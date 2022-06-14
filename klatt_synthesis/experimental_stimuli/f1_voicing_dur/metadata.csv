@@ -1,5 +1,5 @@
 ﻿FileID,Category
-HighF1_LongVoicing.wav,1_F1_0_voicing
+HighF1_LongVoicing.wav,1_F1_1_voicing
 HighF1_ShortVoicing.wav,1_F1_0_voicing
-LowF1_LongVoicing.wav,1_F1_0_voicing
+LowF1_LongVoicing.wav,0_F1_1_voicing
 LowF1_ShortVoicing.wav,0_F1_0_voicing
