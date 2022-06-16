@@ -104,60 +104,70 @@ ipp <- function(row){
 # 0 if on neither)
 ipp_labels <- to_vec(for(i in 1:nrow(distances)) ipp(distances[i,]))
 
-distances <- cbind(distances, IPP = ipp_labels)
+distances <- cbind(distances, Type = ipp_labels)
 
 
 
-#Group by experiment
-experiment_distances <- distances %>% 
-  group_by(Experiment)
+
+#Make IPP labels more readable
+distances <- mutate(distances, Type = ifelse(Type==1,"IPP",Type))
+distances <- mutate(distances, Type = ifelse(Type==-1,"Anti_IPP",Type))
+
+#Only pay attention to IPP and Anti-IPP diagonals
+test_distances <- filter(distances, Type != 0)
+
+#Merge IPP and Anti-IPP results into single row for each experiment, each trial
+test_distances <- pivot_wider(test_distances,id_cols = c("Trial", "Experiment"),
+                              names_from="Type",values_from = "Distance")
+
+#Compute difference between IPP distance and Anti-IPP distance
+test_distances <- mutate(test_distances, Effect = IPP - Anti_IPP)
+
+#Compute mean difference and standard deviation across trials, for each experiment
+experiment_distances <- group_by(test_distances, Experiment)
+experiment_sds <- summarize(experiment_distances, stdev = sd(Effect))
+experiment_effects <- summarize(experiment_distances, mean_diff = mean(Effect))
+agg_results <- merge(experiment_sds, experiment_effects, by="Experiment")
+
+
+#Compute how many trials are necessary for 0.8 power for each experiment
+#given estimated effect size and standard dev for each experiment
+num_trials <- function(row){
+  stdev = row[[2]]
+  effect = row[[3]]
+  power.t.test(delta=effect, sd = stdev, power = 0.8, n= NULL)
+  
+}  
+
+num_trials_per_exp <- to_vec(for(i in 1:nrow(agg_results)) num_trials(agg_results[i,])$n)
+agg_results <- mutate(agg_results, Required_Trial_Num=num_trials_per_exp)
+
+
+
+
+
+# #Group by experiment
+# experiment_distances <- distances %>% 
+#   group_by(Experiment)
 
 
 #Get just the IPP and anti-IPP rows
-ipp_diagonals <- subset(experiment_distances, IPP == 1)
-anti_ipp_diagonals <- subset(experiment_distances, IPP == -1)
+# ipp_diagonals <- subset(experiment_distances, IPP == 1)
+# anti_ipp_diagonals <- subset(experiment_distances, IPP == -1)
 
 #Estimate effect size: 
 #Take mean distance for each diagonal
 
-ipp_mean <-ipp_diagonals %>% summarize(
-                              ipp_mean_dist = mean(Distance),
-)
-
-
-anti_ipp_mean <- anti_ipp_diagonals %>% summarize(
-  anti_mean_dist = mean(Distance),
-)
+# ipp_mean <-ipp_diagonals %>% summarize(
+#                               ipp_mean_dist = mean(Distance),
+# )
+# 
+# 
+# anti_ipp_mean <- anti_ipp_diagonals %>% summarize(
+#   anti_mean_dist = mean(Distance),
+# )
 
 #Get differences between ipp and anti-ipp means for each experiment
-effect_sizes = ipp_mean$ipp_mean_dist - anti_ipp_mean$anti_mean_dist
-aggregated <- cbind(ipp_mean, EffectSize = effect_sizes)
-aggregated <- cbind(aggregated, anti_mean_dist = anti_ipp_mean$anti_mean_dist)
-
-
-
-#Estimate variability:
-#Re-compute difference between diagonals for each trial, non-grouped
-distances <- rename(distances, Type = IPP )
-distances <- mutate(distances, Type = ifelse(Type==1,"IPP",Type))
-distances <- mutate(distances, Type = ifelse(Type==-1,"Anti_IPP",Type))
-
-test_distances <- filter(distances, Type != 0)
-
-test_distances <- pivot_wider(test_distances,id_cols = c("Trial", "Experiment"),
-                              names_from="Type",values_from = "Distance")
-
-test_distances <- 
-trial_diffs <- distances %>% group_by(Experiment) %>% group_by(Trial) %>%
-  summarize (trial_effect = )
-trial_ipp_diagonals <- subset(distances, IPP == 1)
-trial_anti_ipp_diagonals <- subset(distances, IPP == -1)
-trial_differences <- trial_ipp_diagonals %>% group_by(Trial) trial_ipp_diagonals$
-
-
-
-
-
-
-#Given effect size, variability, and power, estimate number of trials
-power.t.test(delta=effect_sizes, sd = sd_experiments, power = 0.8)
+# effect_sizes = ipp_mean$ipp_mean_dist - anti_ipp_mean$anti_mean_dist
+# aggregated <- cbind(ipp_mean, EffectSize = effect_sizes)
+# aggregated <- cbind(aggregated, anti_mean_dist = anti_ipp_mean$anti_mean_dist)
