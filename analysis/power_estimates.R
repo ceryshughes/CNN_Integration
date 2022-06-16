@@ -81,7 +81,7 @@ ipp <- function(row){
       result <- -1
     }
   }
-  else (experiment == "f1_voicing_dur"){
+  else if (experiment == "f1_voicing_dur"){
     #IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f1 == 0 & stim1_voicing == 1 & stim2_f1 == 1 & stim2_voicing == 0){
       result <- 1
@@ -108,7 +108,6 @@ distances <- cbind(distances, IPP = ipp_labels)
 
 
 
-
 #Group by experiment
 experiment_distances <- distances %>% 
   group_by(Experiment)
@@ -122,22 +121,43 @@ anti_ipp_diagonals <- subset(experiment_distances, IPP == -1)
 #Take mean distance for each diagonal
 
 ipp_mean <-ipp_diagonals %>% summarize(
-                              mean_dist = mean(Distance),
+                              ipp_mean_dist = mean(Distance),
 )
 
 
 anti_ipp_mean <- anti_ipp_diagonals %>% summarize(
-  mean_dist = mean(Distance),
+  anti_mean_dist = mean(Distance),
 )
 
 #Get differences between ipp and anti-ipp means for each experiment
-effect_sizes = ipp_mean$mean_dist - anti_ipp_mean$mean_dist
-
+effect_sizes = ipp_mean$ipp_mean_dist - anti_ipp_mean$anti_mean_dist
+aggregated <- cbind(ipp_mean, EffectSize = effect_sizes)
+aggregated <- cbind(aggregated, anti_mean_dist = anti_ipp_mean$anti_mean_dist)
 
 
 
 #Estimate variability:
-sd_experiments = sd(effect_sizes)
+#Re-compute difference between diagonals for each trial, non-grouped
+distances <- rename(distances, Type = IPP )
+distances <- mutate(distances, Type = ifelse(Type==1,"IPP",Type))
+distances <- mutate(distances, Type = ifelse(Type==-1,"Anti_IPP",Type))
+
+test_distances <- filter(distances, Type != 0)
+
+test_distances <- pivot_wider(test_distances,id_cols = c("Trial", "Experiment"),
+                              names_from="Type",values_from = "Distance")
+
+test_distances <- 
+trial_diffs <- distances %>% group_by(Experiment) %>% group_by(Trial) %>%
+  summarize (trial_effect = )
+trial_ipp_diagonals <- subset(distances, IPP == 1)
+trial_anti_ipp_diagonals <- subset(distances, IPP == -1)
+trial_differences <- trial_ipp_diagonals %>% group_by(Trial) trial_ipp_diagonals$
+
+
+
+
+
 
 #Given effect size, variability, and power, estimate number of trials
 power.t.test(delta=effect_sizes, sd = sd_experiments, power = 0.8)
