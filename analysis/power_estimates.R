@@ -1,8 +1,9 @@
-#library("dplyr")                                    # Load dplyr package
-#library("plyr")                                     # Load plyr package
-#library("readr")                                    # Load readr package
+library("plyr")
 library("tidyverse")
 library("comprehenr")
+library("lmerTest")
+
+
 
 setwd("~/CNN_Perceptual_Integration_Channel_Bias/Experiment/analysis")
 
@@ -18,7 +19,12 @@ distances <-
 #For each task:
 
 #Hard-code identify which diagonal is the IPP and add as column
+#IPP: 1
+#Anti-IPP: -1
 ipp <- function(row){
+  anti_ipp_symbol <- -1
+  ipp_symbol <- 1
+    
   experiment <- row[["Experiment"]]
   stim1_f0 <- row[["stim1_f0"]]
   stim2_f0 <- row[["stim2_f0"]]
@@ -36,65 +42,65 @@ ipp <- function(row){
   if(experiment == "f0_closure_dur_high_f1" | experiment == "f0_closure_dur_low_f1"){
     #IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f0 == 0 & stim1_Closure == 0 & stim2_f0 == 1 & stim2_Closure == 1){
-      result <- 1
+      result <- ipp_symbol
     }
     if(stim1_f0 == 1 & stim1_Closure == 1 & stim2_f0 == 0 & stim2_Closure == 0){
-      result <- 1
+      result <- ipp_symbol
     }
     #Anti-IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f0 == 0 & stim1_Closure == 1 & stim2_f0 == 1 & stim2_Closure == 0){
-      result <- -1
+      result <- anti_ipp_symbol
     }
     if(stim1_f0 == 1 & stim1_Closure == 0 & stim2_f0 == 0 & stim2_Closure == 1){
-      result <- -1
+      result <- anti_ipp_symbol
     }
   }
   else if(experiment == "f1_closure_dur_high_f0" | experiment == "f1_closure_dur_low_f0"){
     #IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f1 == 0 & stim1_Closure == 0 & stim2_f1 == 1 & stim2_Closure == 1){
-      result <- 1
+      result <- ipp_symbol
     }
     if(stim1_f1 == 1 & stim1_Closure == 1 & stim2_f1 == 0 & stim2_Closure == 0){
-      result <- 1
+      result <- ipp_symbol
     }
     #Anti IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f1 == 0 & stim1_Closure == 1 & stim2_f1 == 1 & stim2_Closure == 0){
-      result <- -1
+      result <- anti_ipp_symbol
     }
     if(stim1_f1 == 1 & stim1_Closure == 0 & stim2_f1 == 0 & stim2_Closure == 1){
-      result <- -1
+      result <- anti_ipp_symbol
     }
   }
   else if(experiment == "f0_voicing_dur"){
     #IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f0 == 0 & stim1_voicing == 1 & stim2_f0 == 1 & stim2_voicing == 0){
-      result <- 1
+      result <- ipp_symbol
     }
     if(stim1_f0 == 1 & stim1_voicing == 0 & stim2_f0 == 0 & stim2_voicing == 1){
-      result <- 1
+      result <- ipp_symbol
     }
     #Anti IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f0 == 1 & stim1_voicing == 1 & stim2_f0 == 0 & stim2_voicing == 0){
-      result <- -1
+      result <- anti_ipp_symbol
     }
     if(stim1_f0 == 0 & stim1_voicing == 0 & stim2_f0 == 1 & stim2_voicing == 1){
-      result <- -1
+      result <- anti_ipp_symbol
     }
   }
   else if (experiment == "f1_voicing_dur"){
     #IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f1 == 0 & stim1_voicing == 1 & stim2_f1 == 1 & stim2_voicing == 0){
-      result <- 1
+      result <- ipp_symbol
     }
     if(stim1_f1 == 1 & stim1_voicing == 0 & stim2_f1 == 0 & stim2_voicing == 1){
-      result <- 1
+      result <- ipp_symbol
     }
     #Anti-IPP diagonal (don't know which will be stim1 vs stim2)
     if(stim1_f1 == 1 & stim1_voicing == 1 & stim2_f1 == 0 & stim2_voicing == 0){
-      result <- -1
+      result <- anti_ipp_symbol
     }
     if(stim1_f1 == 0 & stim1_voicing == 0 & stim2_f1 == 1 & stim2_voicing == 1){
-      result <- -1
+      result <- anti_ipp_symbol
     }
   }
   result
@@ -106,17 +112,25 @@ ipp_labels <- to_vec(for(i in 1:nrow(distances)) ipp(distances[i,]))
 
 distances <- cbind(distances, Type = ipp_labels)
 
-
-
-
-#Make IPP labels more readable
-distances <- mutate(distances, Type = ifelse(Type==1,"IPP",Type))
-distances <- mutate(distances, Type = ifelse(Type==-1,"Anti_IPP",Type))
-
 #Only pay attention to IPP and Anti-IPP diagonals
 test_distances <- filter(distances, Type != 0)
 
+####Make linear model version of data:####
+#Change Type column name to IPP and Trial column name to Model
+#and change values to Anti-IPP = 0 and IPP = 1
+lm_distances <- mutate(test_distances, Type = ifelse(Type==-1,0,Type))
+lm_distances <- rename(lm_distances, IPP = Type)
+lm_distances <- rename(lm_distances, Model = Trial)
+
+
+####Make estimating effect sizes version of data:####
+#Make IPP labels more readable for effect sizes version
+test_distances <- mutate(test_distances, Type = ifelse(Type==1,"IPP",Type))
+test_distances <- mutate(test_distances, Type = ifelse(Type==-1,"Anti_IPP",Type))
+
+
 #Merge IPP and Anti-IPP results into single row for each experiment, each trial
+#To compute effect sizes 
 test_distances <- pivot_wider(test_distances,id_cols = c("Trial", "Experiment"),
                               names_from="Type",values_from = "Distance")
 
@@ -144,6 +158,25 @@ agg_results <- mutate(agg_results, Required_Trial_Num=num_trials_per_exp)
 
 
 
+###Regression Modeling###
+cue_pairings_results <- split(lm_distances, lm_distances$Experiment)
+for (cue_pairing in cue_pairings_results){
+  lmer(Distance ~ IPP + (1 | Model), data=lm_distanc)
+}
+
+
+#From https://stackoverflow.com/questions/1169539/linear-regression-and-group-by-in-r
+#Regression model to determine how task dimension predicts distance
+# models <- dlply(distances, "Experiment", function(df){
+#   lm(Distance ~ Type, data=df)
+# })
+# 
+# ldply(models, coef)
+# 
+# # Print the summary of each model
+# l_ply(models, summary, .print = TRUE)
+#factor experiment number and see if there's an interaction between experiment number
+#/experiment type and trial
 
 
 # #Group by experiment
