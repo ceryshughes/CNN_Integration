@@ -20,8 +20,8 @@ module load miniconda/4.11.0
 #pip3 install librosa==0.8.1
 
 #python3.8 train_cnn.py
-START_SEED=6
-END_SEED=15
+START_SEED=16
+END_SEED=70
 
 for ((seed_num=$START_SEED; seed_num<=$END_SEED; seed_num++)); do
 

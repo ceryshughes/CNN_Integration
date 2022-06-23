@@ -22,7 +22,7 @@ module load miniconda/4.11.0
 #python3.8 train_cnn.py
 
 START_SEED=16
-END_SEED=36
+END_SEED=20
 
 for (( run_seed=$START_SEED; run_seed <=END_SEED; run_seed++ )); do
 
