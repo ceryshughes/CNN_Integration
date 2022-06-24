@@ -5,6 +5,7 @@ library("lmerTest")
 
 
 
+
 setwd("~/CNN_Perceptual_Integration_Channel_Bias/Experiment/analysis")
 
 
@@ -118,7 +119,8 @@ test_distances <- filter(distances, Type != 0)
 ####Make linear model version of data:####
 #Change Type column name to IPP and Trial column name to Model
 #and change values to Anti-IPP = 0 and IPP = 1
-lm_distances <- mutate(test_distances, Type = ifelse(Type==-1,0,Type))
+lm_distances <- mutate(test_distances, Type = ifelse(Type==-1,-.5,Type))
+lm_distances <- mutate(lm_distances, Type = ifelse(Type==1,.5,Type))
 lm_distances <- rename(lm_distances, IPP = Type)
 lm_distances <- rename(lm_distances, Model = Trial)
 
@@ -160,9 +162,89 @@ agg_results <- mutate(agg_results, Required_Trial_Num=num_trials_per_exp)
 
 ###Regression Modeling###
 cue_pairings_results <- split(lm_distances, lm_distances$Experiment)
+
+model_results <- list()
 for (cue_pairing in cue_pairings_results){
-  lmer(Distance ~ IPP + (1 | Model), data=lm_distanc)
+  pairing_name <- cue_pairing[1,]$Experiment
+  output <- lmer("Distance~IPP+(1|Model)", data=cue_pairing)
+  model_results <- c(model_results, pairing_name=output)
+  print(pairing_name)
+  print(output)
+  print(anova(output))
+  print("")
+  print("")
 }
+
+##Plotting###
+pretty_title <- function(name){
+  title <- name
+  if (name=="f1_voicing_dur"){
+    title <- "F1 x Closure Voicing Duration"
+  }
+  if (name=="f0_voicing_dur"){
+    title <- "f0 x Closure Voicing Duration"
+  }
+  if(name=="f1_closure_dur_low_f0"){
+    title <- "F1 x Closure Duration (low f0)"
+  }
+  if(name=="f1_closure_dur_high_f0"){
+    title <- "F1 x Closure Duration (high f0)"
+  }
+  if(name=="f0_closure_dur_high_f0"){
+    title <- "F0 x Closure Duration (high f0)"
+  }
+  if(name=="f0_closure_dur_low_f0"){
+    title <- "F0 x Closure Duration (low f0)"
+  }
+  title
+}
+
+#Make data nice for plotting xy plots
+cue_pairings_results_wide <- rename(test_distances, Model=Trial)
+cue_pairings_results_wide <- split(cue_pairings_results_wide, cue_pairings_results_wide$Experiment)
+
+xy_plots <- list()
+for (cue_pairing in cue_pairings_results_wide){
+  pairing_name <- cue_pairing[1,]$Experiment
+  title <- pretty_title(pairing_name)
+  p <- ggplot(data=cue_pairing, aes(x=IPP, y=Anti_IPP)) + ggtitle(title)+
+    geom_point() + xlab("Distance on Natural Dimension") + 
+    ylab("Distance on Mismatched Dimension")
+  print(p)
+  xy_plots <- c(xy_plots, p)
+}
+xy_plots[[2]]
+
+
+#Make data nice for box plots
+long_lm <- mutate(lm_distances, IPP = ifelse(IPP==-.5,"Mismatched",IPP))
+long_lm <- mutate(long_lm, IPP = ifelse(IPP==.5,"Natural",IPP))
+cue_pairings_long <-  split(long_lm, long_lm$Experiment)
+box_plots <- list()
+for (cue_pairing in cue_pairings_long){
+  pairing_name <- cue_pairing[1,]$Experiment
+  title <- pretty_title(pairing_name)
+  p <- ggplot(data=cue_pairing, aes(x=IPP, y=Distance)) + ggtitle(title)+
+    geom_boxplot() + xlab("Stimuli Dimension") + 
+    ylab("Distance")
+  print(p)
+  box_plots <- c(box_plots, p)
+}
+box_plots[[2]]
+
+
+#Histograms of cosine distances
+histograms <- list()
+for (cue_pairing in cue_pairings_long){
+  pairing_name <- cue_pairing[1,]$Experiment
+  title <- pretty_title(pairing_name)
+  p <- ggplot(data=cue_pairing, aes(x=Distance, fill=IPP)) + ggtitle(title)+
+    geom_histogram() + xlab("Cosine Distance") + 
+    ylab("Frequency")
+  print(p)
+  histograms <- c(histograms, p)
+}
+ 
 
 
 #From https://stackoverflow.com/questions/1169539/linear-regression-and-group-by-in-r
