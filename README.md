@@ -2,9 +2,10 @@
 A replication of the CNNs used in Donahue's WaveGAN discriminator (and motivated by Begus's application of WaveGAN to sound change) for the purposes of conducting probing analogous to human acoustic integration experiments, specifically those in Kingston et al (2008).
 
 
-
+Python version used: 3.8
 
 Required Python libraries:
+
 -numpy
 
 -tensorflow
@@ -16,47 +17,67 @@ Required Python libraries:
 -pandas
 
 For the VCV processing code,
+
 -textgrid: https://github.com/kylebgorman/textgrid
 
 -praat-parseltongue
 
 
 Folders:
+
 WaveformCNN: Python code for processing sound data, definining and training the CNN, and running the discrimination task
+
 	laff_vcv: folder for code for the processing LAFF VCV corpus
+	
 		compute_vcv_distributions.py: extracts measurements from each real speech token
+		
 		sample_params.py: creates synthesis parameters for the training data using the measurements from compute_vcv_distributions.py
+		
 		.xlsx files: synthesis parameters
+		
 		.csv files: mapping from filenames to category labels (e.g. voiced vs voiceless)
+		
 		laff_plots, laff_plots_pulse_voicing_new_closures: plots of LAFF measurement distributions distributions, each with a different measurement criterion 
+	
 	discrim_results: output files from discrimination task
+	
 	saved_models: all of the metadata(e.g. weight values) about models after training so they can be loaded later
+	
 	cnn.py: code that defines CNN
+	
 	id_loader.py: code modified from Donahue et al. that processes sound files into Tensorflow Datasets of vectors, but linked with their filenames
+	
 	data_processing.py: code for mapping the filenames to category encodings  to make the output of id_loader interfaceable with model training
+	
 	train_cnn.py: code that builds and trains a CNN given training data
+	
 	discrim_trask.py: code that loads a model and probes its hidden layers for its perceptual distances, emulating the discrimination task used in the Garner paradigm
 
 klatt_synthesis: R code for using a table of synthesis parameters to generate Praat Klatt synthesis scripts 
+
 	praat_vcv_synthesis.R: generates Praat Klatt synthesis scripts from tabular synthesis parameters
+	
 	run_klatt-scripts.sh: runs Praat scripts
+	
 	script folders: contain Praat scripts
+	
 	sounds folders: contain Praat synthesized sounds
+	
 	experimental stimuli: Praat scripts and sounds for the discrimination experiments
 
 laff_vcv_tokens_with_stops: the tokens in the LAFF production data containing a stop, annotated with TextGrids
 
-analysis/power_estimates.R (should rename this): R code for processing discrimination task results
+analysis/power_estimates.R (should rename this): R code for processing discrimination task results (todo: rename this!)
 
 
 Main function runnable:
-train_cnn.py
+train_cnn.py - Sets up a CNN model and trains it on waveform data
 
-discrim_task.py
+discrim_task.py - Loads a saved model and experimental stimuli to compute cosine distances
 
-Still writing: 
+Still working on: 
 
-test_cnn.py
+test_cnn.py - Adding unit testing 
 
 
 
