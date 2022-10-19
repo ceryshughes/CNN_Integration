@@ -190,11 +190,11 @@ pretty_title <- function(name){
   if(name=="f1_closure_dur_high_f0"){
     title <- "F1 x Closure Duration (high f0)"
   }
-  if(name=="f0_closure_dur_high_f0"){
-    title <- "F0 x Closure Duration (high f0)"
+  if(name=="f0_closure_dur_high_f1"){
+    title <- "F0 x Closure Duration (high F1)"
   }
-  if(name=="f0_closure_dur_low_f0"){
-    title <- "F0 x Closure Duration (low f0)"
+  if(name=="f0_closure_dur_low_f1"){
+    title <- "F0 x Closure Duration (low F1)"
   }
   title
 }
@@ -209,11 +209,20 @@ for (cue_pairing in cue_pairings_results_wide){
   title <- pretty_title(pairing_name)
   p <- ggplot(data=cue_pairing, aes(x=IPP, y=Anti_IPP)) + ggtitle(title)+
     geom_point() + xlab("Distance on Natural Dimension") + 
-    ylab("Distance on Mismatched Dimension")
+    ylab("Distance on Mismatched Dimension") 
   print(p)
+  dev.copy(pdf, paste("xy_plots/xy_",title,".pdf", sep=""))
+  dev.off()
   xy_plots <- c(xy_plots, p)
 }
-xy_plots[[2]]
+#xy_plots[[2]]
+
+#Xy plot for all data, not split
+p <- ggplot(data=test_distances, aes(x=IPP, y=Anti_IPP))+ 
+  ggtitle("Cosine distances across model versions")+
+  geom_point() + xlab("Distance on Natural Dimension") + 
+  ylab("Distance on Mismatched Dimension") 
+p
 
 
 #Make data nice for box plots
@@ -228,6 +237,8 @@ for (cue_pairing in cue_pairings_long){
     geom_boxplot() + xlab("Stimuli Dimension") + 
     ylab("Distance")
   print(p)
+  dev.copy(pdf, paste("box_plots/box_plot_",title,".pdf", sep=""))
+  dev.off()
   box_plots <- c(box_plots, p)
 }
 box_plots[[2]]
@@ -240,8 +251,10 @@ for (cue_pairing in cue_pairings_long){
   title <- pretty_title(pairing_name)
   p <- ggplot(data=cue_pairing, aes(x=Distance, fill=IPP)) + ggtitle(title)+
     geom_histogram() + xlab("Cosine Distance") + 
-    ylab("Frequency")
+    ylab("Frequency") + scale_color_brewer(palette = "PuOr")
   print(p)
+  dev.copy(pdf, paste("histograms/histogram_",title,".pdf", sep=""))
+  dev.off()
   histograms <- c(histograms, p)
 }
  

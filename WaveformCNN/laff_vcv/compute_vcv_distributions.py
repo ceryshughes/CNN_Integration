@@ -241,6 +241,7 @@ def plot_closure_data(tokens, nbins, label = "", speaker = "", savename=""):
     plt.xlabel("Time(s)")
     plt.ylabel("Tokens")
     plt.hist([token.stop.closure_dur for token in tokens], bins=nbins)
+    plt.xticks(rotation=45)
     if savename != "":
         plt.savefig(savename)
     plt.show()
@@ -254,6 +255,7 @@ def plot_voicing_data(tokens, nbins, label = "", speaker = "", savename=""):
     plt.xlabel("Time(s)")
     plt.ylabel("Tokens")
     plt.hist([token.stop.voicing_dur for token in tokens], bins=nbins)
+    plt.xticks(rotation=45)
     if savename != "":
         plt.savefig(savename)
     plt.show()
@@ -298,7 +300,7 @@ def plot_vowel_measure(vowel_order, measure, location, tokens, nbins, label ="",
 #condition: function that takes a token and returns a boolean; only the tokens that result in True
 #will be included in the plots
 #label: extra substring to be added to plot file names and titles
-def plot_vowel_measures(tokens,condition, label):
+def plot_vowel_measures(tokens,condition, label, nbins=30, plot_dir = "laff_plots_pulse_voicing_new_closures/"):
     # Plot steady f0
     plot_vowel_measure(1, 0, "steady", [token for token in tokens if condition(token)],
                        nbins, label=label, savename=plot_dir + label + "_v1_steady_f0.png")
@@ -371,6 +373,9 @@ if __name__ == "__main__":
         #    print("\t", vcv.stop.voicing_dur, vcv.stop.closure_dur)
         #    print("\t", vcv.vowel1.measurement_dict)
         tokens.append(vcv)
+
+    print(len([token for token in tokens if token.stop.label in voiced_stops+voiceless_stops]))
+    exit()
 
     #Get list of unique vowels, stops, and speakers for splitting up data
     vowels = list(set([vcv.vowel1.label for vcv in tokens]))

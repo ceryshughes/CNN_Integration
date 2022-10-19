@@ -13,9 +13,7 @@ Required Python libraries:
 
 -librosa
 
-
-
-
+-pandas
 
 For the VCV processing code,
 -textgrid: https://github.com/kylebgorman/textgrid
@@ -23,20 +21,40 @@ For the VCV processing code,
 -praat-parseltongue
 
 
+Folders:
+WaveformCNN: Python code for processing sound data, definining and training the CNN, and running the discrimination task
+	laff_vcv: folder for code for the processing LAFF VCV corpus
+		compute_vcv_distributions.py: extracts measurements from each real speech token
+		sample_params.py: creates synthesis parameters for the training data using the measurements from compute_vcv_distributions.py
+		.xlsx files: synthesis parameters
+		.csv files: mapping from filenames to category labels (e.g. voiced vs voiceless)
+		laff_plots, laff_plots_pulse_voicing_new_closures: plots of LAFF measurement distributions distributions, each with a different measurement criterion 
+	discrim_results: output files from discrimination task
+	saved_models: all of the metadata(e.g. weight values) about models after training so they can be loaded later
+	cnn.py: code that defines CNN
+	id_loader.py: code modified from Donahue et al. that processes sound files into Tensorflow Datasets of vectors, but linked with their filenames
+	data_processing.py: code for mapping the filenames to category encodings  to make the output of id_loader interfaceable with model training
+	train_cnn.py: code that builds and trains a CNN given training data
+	discrim_trask.py: code that loads a model and probes its hidden layers for its perceptual distances, emulating the discrimination task used in the Garner paradigm
 
+klatt_synthesis: R code for using a table of synthesis parameters to generate Praat Klatt synthesis scripts 
+	praat_vcv_synthesis.R: generates Praat Klatt synthesis scripts from tabular synthesis parameters
+	run_klatt-scripts.sh: runs Praat scripts
+	script folders: contain Praat scripts
+	sounds folders: contain Praat synthesized sounds
+	experimental stimuli: Praat scripts and sounds for the discrimination experiments
+
+laff_vcv_tokens_with_stops: the tokens in the LAFF production data containing a stop, annotated with TextGrids
+
+analysis/power_estimates.R (should rename this): R code for processing discrimination task results
 
 
 Main function runnable:
-cnn.py
+train_cnn.py
 
-sample_data_processing.py
-
+discrim_task.py
 
 Still writing: 
-
-compute_vcv_distributions.py
-
-praat_vcv_synthesis.R
 
 test_cnn.py
 
@@ -72,11 +90,11 @@ venv: virtual environment information
 
 
 Expected warnings:
--If you run this code on a machine without a GPU, you may get tensorflow warnings about a lack of GPU. These warnings are just making you aware of the lack of GPU connection and can be ignored in this case.
+-If you run this code on a machine without a GPU, you may get tensorflow warnings about a lack of GPU. These warnings are just making you aware of the lack of GPU connection and can be ignored.
 
 
 
 -In the data processing code(id_loader.py and sample_data_processing.py), the Dataset class may output warnings about the Autograph (used for computing gradients) and optimization; since the Autograph/gradient computation is not necessary for this preprocessing, these warnings can be ignored.
 
 
--id_loader.py uses a legacy Tensor wrapper function (py_func) from Donahue that's replaced by a slightly different function in the newer version of Tensorflow; it's low priority for me to update it right now, so there will be a warning notifying you that it's an outdated function.
+-id_loader.py uses a legacy Tensor wrapper function (py_func) from Donahue that's replaced by a slightly different function in the newer version of Tensorflow; it's low priority for me to update it right now because it's still supported, so there will be a warning notifying you that it's an outdated function. 
