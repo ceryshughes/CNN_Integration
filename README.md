@@ -6,38 +6,28 @@ Python version used: 3.8
 
 Required Python libraries:
 
--numpy
+* numpy
+* tensorflow
+* keras
+* librosa
+* pandas
 
--tensorflow
+For the VCV production data processing code,
 
--keras
+* textgrid: https://github.com/kylebgorman/textgrid
 
--librosa
-
--pandas
-
-For the VCV processing code,
-
--textgrid: https://github.com/kylebgorman/textgrid
-
--praat-parseltongue
+* praat-parseltongue
 
 
 Folders:
 
-WaveformCNN: Python code for processing sound data, definining and training the CNN, and running the discrimination task
-
-	laff_vcv: folder for code for the processing LAFF VCV corpus
-	
-		compute_vcv_distributions.py: extracts measurements from each real speech token
-		
-		sample_params.py: creates synthesis parameters for the training data using the measurements from compute_vcv_distributions.py
-		
-		.xlsx files: synthesis parameters
-		
-		.csv files: mapping from filenames to category labels (e.g. voiced vs voiceless)
-		
-		laff_plots, laff_plots_pulse_voicing_new_closures: plots of LAFF measurement distributions distributions, each with a different measurement criterion 
+* WaveformCNN: Python code for processing sound data, definining and training the CNN, and running the discrimination task
+    * laff_vcv: folder for code for the processing LAFF VCV corpus
+    * compute_vcv_distributions.py: extracts measurements from each real speech token
+        * sample_params.py: creates synthesis parameters for the training data using the measurements from compute_vcv_distributions.py
+	* .xlsx files: synthesis parameters
+	* .csv files: mapping from filenames to category labels (e.g. voiced vs voiceless)
+	* laff_plots, laff_plots_pulse_voicing_new_closures: plots of LAFF measurement distributions distributions, each with a different measurement criterion 
 	
 	discrim_results: output files from discrimination task
 	
