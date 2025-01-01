@@ -1,5 +1,5 @@
 # CNN_Integration
-A replication of the CNNs used in Donahue's WaveGAN discriminator (and motivated by Begus's application of WaveGAN to sound change) for the purposes of conducting probing analogous to human acoustic integration experiments, specifically those in Kingston et al (2008) for eventually implementing a model of Yang (2019)'s account of the contrast shift typology.
+A replication of the CNNs used in Donahue (2018)'s WaveGAN discriminator (and motivated by Begus's application of WaveGAN to sound change) for the purposes of conducting probing analogous to human acoustic integration experiments, specifically those in Kingston et al (2008) for eventually implementing a model of Yang (2019)'s account of the contrast shift typology.
 
 
 Python version used: 3.8
@@ -45,7 +45,7 @@ Folders and scripts:
 
 * laff_vcv_tokens_with_stops: the tokens in the LAFF production data containing a stop, annotated with TextGrids
 
-* analysis/power_estimates.R (should rename this): R code for processing discrimination task results (todo: rename this!)
+* analysis/power_estimates.R (should rename this): R code for processing discrimination task results 
 
 
 To train and save a CNN model:
@@ -64,29 +64,22 @@ Still working on:
 
 Files and directories in WaveformCNN (more detail):
 
-* cnn.py: Definition of the CNN architecture and training procedure as an extension of the Keras Model class, replicating Donahue's WaveGAN discriminator (although for a truly faithful representation, I still need to add gradient clipping to training)
+* cnn.py: Definition of the CNN architecture and training procedure as an extension of the Keras Model class, replicating Donahue (2018)'s WaveGAN discriminator (although for a truly faithful representation, I still need to add gradient clipping to training)
 
 
 
 * id_loader.py: Definition of functions for reading the audio data while maintaining file identity information, following Donahue's WaveGAN audio data reading in loader.py
 
 
+Miscellaneous scratch-work files that are kept because they might still be useful:
 
 * sample_wavs and sample_file_info: dummy data for debugging
-
-
-
 * sample_data_processing.py: Code for processing the output of id_loader.py for the dummy data in sample_wavs and sample_file_info
   
 * test_cnn.py: file for unit tests, not yet done
 
-
-
 * scratch_files: unorganized snippets of code and notes from when I was figuring out how Donahue's WaveGAN code works
 
-
-
-* venv: virtual environment information
 
 
 
