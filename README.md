@@ -49,11 +49,14 @@ Folders and scripts:
 
 
 To train and save a CNN model:
+
     * train_cnn.py
 To evaluate a CNN model's cosine distances between experimental stimuli:
+
     * discrim_task.py
 
 Still working on: 
+
     * test_cnn.py - Adding unit testing 
 
 
