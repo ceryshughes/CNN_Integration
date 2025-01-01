@@ -76,8 +76,9 @@ Files and directories in WaveformCNN (more detail):
 
 
 
-* sample_data_processing.py: Code for processing the output of id_loader.py for the dummy data in sample_wavs and sample_file_info; once I'm confident in this working, I'll clean it up for real data
-test_cnn.py: file for unit tests, not yet done
+* sample_data_processing.py: Code for processing the output of id_loader.py for the dummy data in sample_wavs and sample_file_info
+  
+* test_cnn.py: file for unit tests, not yet done
 
 
 
